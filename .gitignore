@@ -5,6 +5,7 @@
 *.so
 *.dylib
 .idea/
+**/*.xlsx
 
 # Test binary, build with `go test -c`
 *.test

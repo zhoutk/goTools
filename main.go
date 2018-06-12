@@ -6,7 +6,17 @@ import (
 	"strconv"
 	"github.com/Luxurioust/excelize"
 	"encoding/json"
+	"math/rand"
+	"time"
+	_ "github.com/go-sql-driver/mysql"
+	"database/sql"
 )
+
+func init(){
+	//以时间作为初始化种子
+	rand.Seed(time.Now().UnixNano())
+}
+
 
 func main() {
 	xlsx, err := excelize.OpenFile("./qs.xlsx")
@@ -21,7 +31,10 @@ func main() {
 	index := xlsx.GetSheetIndex("Sheet1")
 	// Get all the rows in a sheet.
 	rows := xlsx.GetRows("Sheet" + strconv.Itoa(index))
+	var vs string
+	var vss string
 	for i, row := range rows {
+		fmt.Println(i)
 		if i == 0 {
 			continue
 		}
@@ -47,10 +60,27 @@ func main() {
 		answer["answer"] = row[6]
 		answers = append(answers, answer)
 
+		for j := 0; j < 10; j++ {
+			sp := rand.Intn(4)
+			tmp := answers[sp]
+			answers[sp] = answers[0]
+			answers[0] = tmp
+		}
+
 		data, err := json.Marshal(answers)
 		if err == nil {
-			fmt.Printf("%s\n", string(data))
+			dd := string(data)
+			vs = vs + " ('" + row[1]+ "', '" + dd + "' ),"
 		}
-		break
+		vss += "(?,?),"
 	}
+	vs = vs[0:len(vs) -1]
+	vss = vss[0:len(vss) -1]
+	db, err := sql.Open("mysql", "root:znhl2017UP@tcp(tlwl2020.mysql.rds.aliyuncs.com:3686)/policy?charset=utf8")
+	sqlstr := "insert into questions2 (name, answer_json) values " + vs
+	defer db.Close()
+	fmt.Printf("%s\n", sqlstr)
+	res, err := db.Exec(sqlstr)
+	fmt.Println(res)
+	fmt.Println(err)
 }
