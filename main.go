@@ -28,7 +28,6 @@ func main() {
 	var vs [] interface{}
 	var vss string
 	for i, row := range rows {
-		fmt.Println(i)
 		if i == 0 {
 			continue
 		}
@@ -70,12 +69,19 @@ func main() {
 		vss += "(?,?),"
 	}
 	vss = vss[0:len(vss) -1]
+	//vs = append(vs, "ssss")
 	db, err := sql.Open("mysql", "root:znhl2017UP@tcp(tlwl2020.mysql.rds.aliyuncs.com:3686)/policy?charset=utf8")
 	sqlstr := "insert into questions2 (name, answer_json) values " + vss
 	defer db.Close()
 	fmt.Printf("%s\n", sqlstr)
 	stmt, _ := db.Prepare(sqlstr)
-	res, err := stmt.Exec(vs...)
-	fmt.Println(res)
-	fmt.Println(err)
+	rs, err := stmt.Exec(vs...)
+	if err != nil {
+		fmt.Println(err)
+	}else {
+		id, _ := rs.LastInsertId()
+		affect, _ := rs.RowsAffected()
+		fmt.Println(id)
+		fmt.Println(affect)
+	}
 }
