@@ -13,7 +13,6 @@ import (
 )
 
 func init(){
-	//以时间作为初始化种子
 	rand.Seed(time.Now().UnixNano())
 }
 
@@ -24,14 +23,9 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	// Get value from cell by given sheet index and axis.
-	//cell := xlsx.GetCellValue("Sheet1", "B2")
-	//fmt.Println(cell)
-	// Get sheet index.
 	index := xlsx.GetSheetIndex("Sheet1")
-	// Get all the rows in a sheet.
 	rows := xlsx.GetRows("Sheet" + strconv.Itoa(index))
-	var vs string
+	var vs [] interface{}
 	var vss string
 	for i, row := range rows {
 		fmt.Println(i)
@@ -70,17 +64,18 @@ func main() {
 		data, err := json.Marshal(answers)
 		if err == nil {
 			dd := string(data)
-			vs = vs + " ('" + row[1]+ "', '" + dd + "' ),"
+			vs = append(vs, row[1])
+			vs = append(vs, dd)
 		}
 		vss += "(?,?),"
 	}
-	vs = vs[0:len(vs) -1]
 	vss = vss[0:len(vss) -1]
 	db, err := sql.Open("mysql", "root:znhl2017UP@tcp(tlwl2020.mysql.rds.aliyuncs.com:3686)/policy?charset=utf8")
-	sqlstr := "insert into questions2 (name, answer_json) values " + vs
+	sqlstr := "insert into questions2 (name, answer_json) values " + vss
 	defer db.Close()
 	fmt.Printf("%s\n", sqlstr)
-	res, err := db.Exec(sqlstr)
+	stmt, _ := db.Prepare(sqlstr)
+	res, err := stmt.Exec(vs...)
 	fmt.Println(res)
 	fmt.Println(err)
 }
