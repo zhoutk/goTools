@@ -8,11 +8,6 @@ import (
 	"encoding/json"
 )
 
-type answer struct {
-	right bool
-	answer string
-}
-
 func main() {
 	xlsx, err := excelize.OpenFile("./qs.xlsx")
 	if err != nil {
@@ -30,14 +25,32 @@ func main() {
 		if i == 0 {
 			continue
 		}
-		var answers []answer
-		answers = append(answers, answer{ true,row[3] })
-		answers = append(answers, answer{ false,row[4] })
-		answers = append(answers, answer{ false,row[5] })
-		answers = append(answers, answer{ false,row[6] })
+		var answers []map[string]interface{}
+		answer := make(map[string]interface{})
+
+		answer["right"] = true
+		answer["answer"] = row[3]
+		answers = append(answers, answer)
+
+		answer = make(map[string]interface{})
+		answer["right"] = false
+		answer["answer"] = row[4]
+		answers = append(answers, answer)
+
+		answer = make(map[string]interface{})
+		answer["right"] = false
+		answer["answer"] = row[5]
+		answers = append(answers, answer)
+
+		answer = make(map[string]interface{})
+		answer["right"] = false
+		answer["answer"] = row[6]
+		answers = append(answers, answer)
+
 		data, err := json.Marshal(answers)
 		if err == nil {
-			fmt.Printf("%s\n", data)
+			fmt.Printf("%s\n", string(data))
 		}
+		break
 	}
 }
