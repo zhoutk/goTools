@@ -2,86 +2,129 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"strconv"
-	"github.com/Luxurioust/excelize"
-	"encoding/json"
-	"math/rand"
-	"time"
 	_ "github.com/go-sql-driver/mysql"
 	"database/sql"
+	"io/ioutil"
+	"os"
+	"bufio"
+	"io"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
-func init(){
-	rand.Seed(time.Now().UnixNano())
+//表情解码
+func UnicodeEmojiDecode(s string) string {
+	//emoji表情的数据表达式
+	re := regexp.MustCompile("\\[[\\\\u0-9a-zA-Z]+\\]")
+	//提取emoji数据表达式
+	reg := regexp.MustCompile("\\[\\\\u|]")
+	src := re.FindAllString(s, -1)
+	for i := 0; i < len(src); i++ {
+		e := reg.ReplaceAllString(src[i], "")
+		p, err := strconv.ParseInt(e, 16, 32)
+		if err == nil {
+			s = strings.Replace(s, src[i], string(rune(p)), -1)
+		}
+	}
+	return s
 }
 
+//表情转换
+func UnicodeEmojiCode(s string) string {
+	ret := ""
+	rs := []rune(s)
+	for i := 0; i < len(rs); i++ {
+		if len(string(rs[i])) == 4 {
+			u := `[\u` + strconv.FormatInt(int64(rs[i]), 16) + `]`
+			ret += u
+
+		} else {
+			ret += string(rs[i])
+		}
+	}
+	return ret
+}
 
 func main() {
-	xlsx, err := excelize.OpenFile("./qs.xlsx")
+	var emojiRx = regexp.MustCompile(`[\x{1F600}-\x{1F6FF}|[\x{2600}-\x{26FF}]`)
+	db, err := sql.Open("mysql", "root:znhl2017UP@tcp(tlwl2020.mysql.rds.aliyuncs.com:3686)/fbox?charset=utf8mb4")
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		panic(err.Error())
 	}
-	index := xlsx.GetSheetIndex("Sheet1")
-	rows := xlsx.GetRows("Sheet" + strconv.Itoa(index))
-	var vs [] interface{}
-	var vss string
-	for i, row := range rows {
-		if i == 0 {
-			continue
-		}
-		var answers []map[string]interface{}
-		answer := make(map[string]interface{})
-
-		answer["right"] = true
-		answer["answer"] = row[3]
-		answers = append(answers, answer)
-
-		answer = make(map[string]interface{})
-		answer["right"] = false
-		answer["answer"] = row[4]
-		answers = append(answers, answer)
-
-		answer = make(map[string]interface{})
-		answer["right"] = false
-		answer["answer"] = row[5]
-		answers = append(answers, answer)
-
-		answer = make(map[string]interface{})
-		answer["right"] = false
-		answer["answer"] = row[6]
-		answers = append(answers, answer)
-
-		for j := 0; j < 10; j++ {
-			sp := rand.Intn(4)
-			tmp := answers[sp]
-			answers[sp] = answers[0]
-			answers[0] = tmp
-		}
-
-		data, err := json.Marshal(answers)
-		if err == nil {
-			dd := string(data)
-			vs = append(vs, row[1])
-			vs = append(vs, dd)
-		}
-		vss += "(?,?),"
-	}
-	vss = vss[0:len(vss) -1]
-	//vs = append(vs, "ssss")
-	db, err := sql.Open("mysql", "root:znhl2017UP@tcp(tlwl2020.mysql.rds.aliyuncs.com:3686)/policy?charset=utf8")
-	sqlstr := "insert into questions2 (name, answer_json) values " + vss
+	sqlstr := "select id,content,comments from aaa"
 	defer db.Close()
-	fmt.Printf("%s\n", sqlstr)
-	stmt, _ := db.Prepare(sqlstr)
-	rs, err := stmt.Exec(vs...)
+
+	rows, err := db.Query(sqlstr)
+	defer rows.Close()
+	var rs string
+	for rows.Next() {
+		var id string
+		var content string
+		var comments string
+		err = rows.Scan(&id, &content, &comments)
+		rs += id + "-" + content + "-" + comments + "\n"
+	}
+	fmt.Printf(emojiRx.ReplaceAllString(rs, `[e]`))
+	WriteWithIo("data.sql", rs)
+	err = rows.Err()
 	if err != nil {
-		fmt.Println(err)
-	}else {
-		id, _ := rs.LastInsertId()
-		affect, _ := rs.RowsAffected()
-		fmt.Println(id)
-		fmt.Println(affect)
+		panic(err.Error())
 	}
 }
+
+func WriteWithIo(name,content string) {
+	fileObj,err := os.OpenFile(name,os.O_RDWR|os.O_CREATE|os.O_APPEND,0644)
+	if err != nil {
+		fmt.Println("Failed to open the file",err.Error())
+		os.Exit(2)
+	}
+	if  _,err := io.WriteString(fileObj,content);err == nil {
+		fmt.Println("Successful appending to the file with os.OpenFile and io.WriteString.")
+	}
+}
+
+
+func WriteWithIoutil(name,content string) {
+	data :=  []byte(content)
+	if ioutil.WriteFile(name,data,0644) == nil {
+		fmt.Println("写入文件成功:",content)
+	}
+}
+
+func WriteWithFileWrite(name,content string){
+	fileObj,err := os.OpenFile(name,os.O_RDWR|os.O_CREATE|os.O_TRUNC,0644)
+	if err != nil {
+		fmt.Println("Failed to open the file",err.Error())
+		os.Exit(2)
+	}
+	defer fileObj.Close()
+	if _,err := fileObj.WriteString(content);err == nil {
+		fmt.Println("Successful writing to the file with os.OpenFile and *File.WriteString method.",content)
+	}
+	contents := []byte(content)
+	if _,err := fileObj.Write(contents);err == nil {
+		fmt.Println("Successful writing to thr file with os.OpenFile and *File.Write method.",content)
+	}
+}
+
+func WriteWithBufio(name,content string) {
+	if fileObj,err := os.OpenFile(name,os.O_RDWR|os.O_CREATE|os.O_APPEND,0644);err == nil {
+		defer fileObj.Close()
+		writeObj := bufio.NewWriterSize(fileObj,4096)
+		//
+		if _,err := writeObj.WriteString(content);err == nil {
+			fmt.Println("Successful appending buffer and flush to file with bufio's Writer obj WriteString method",content)
+		}
+
+		//使用Write方法,需要使用Writer对象的Flush方法将buffer中的数据刷到磁盘
+		buf := []byte(content)
+		if _,err := writeObj.Write(buf);err == nil {
+			fmt.Println("Successful appending to the buffer with os.OpenFile and bufio's Writer obj Write method.",content)
+			if  err := writeObj.Flush(); err != nil {panic(err)}
+			fmt.Println("Successful flush the buffer data to file ",content)
+		}
+	}
+}
+
+
