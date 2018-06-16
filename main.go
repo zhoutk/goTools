@@ -3,6 +3,7 @@ package main
 import (
 	"./db"
 	"fmt"
+	"encoding/json"
 )
 
 func main()  {
@@ -16,6 +17,7 @@ func main()  {
 	if err != nil{
 		fmt.Println(err)
 	}else {
-		fmt.Println(rs)
+		data, _ := json.Marshal(rs)
+		fmt.Println(string(data))
 	}
 }

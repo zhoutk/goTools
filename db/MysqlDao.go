@@ -3,7 +3,6 @@ package db
 import (
 	_ "github.com/go-sql-driver/mysql"
 	mysql "database/sql"
-	"encoding/json"
 )
 
 func Query(sql string, values []interface{}) (map[string]interface{}, error) {
@@ -49,8 +48,8 @@ func execute(sql string, values []interface{}) (map[string]interface{}, error)  
 		result = append(result, each)
 	}
 	rs["code"] = 200
-	data, _ := json.Marshal(result)
-	rs["rows"] = string(data)
+	//data, _ := json.Marshal(result)
+	rs["rows"] = result
 	return rs, err
 }
 
