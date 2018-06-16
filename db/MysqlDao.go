@@ -57,7 +57,7 @@ func execute(sql string, values []interface{}) (map[string]interface{}, error)  
 func FilterHolder(content string) string {
 	newContent := ""
 	for _, value := range content {
-		if value < 65533 {
+		if value != 65533 {
 			newContent += string(value)
 		}
 	}
