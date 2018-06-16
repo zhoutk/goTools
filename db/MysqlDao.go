@@ -43,7 +43,7 @@ func execute(sql string, values []interface{}) (map[string]interface{}, error)  
 		each := make(map[string]string)
 
 		for i, col := range vs {
-			each[columns[i]] = string(col)
+			each[columns[i]] = FilterHolder(string(col))
 		}
 
 		result = append(result, each)
@@ -52,4 +52,14 @@ func execute(sql string, values []interface{}) (map[string]interface{}, error)  
 	data, _ := json.Marshal(result)
 	rs["rows"] = string(data)
 	return rs, err
+}
+
+func FilterHolder(content string) string {
+	newContent := ""
+	for _, value := range content {
+		if value < 65533 {
+			newContent += string(value)
+		}
+	}
+	return newContent
 }
