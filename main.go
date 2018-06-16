@@ -46,8 +46,22 @@ func UnicodeEmojiCode(s string) string {
 	return ret
 }
 
+func FilterEmoji(content string) string {
+	new_content := ""
+	for _, value := range content {
+		if value < 65533 {
+			new_content += string(value)
+		}
+		//size := utf8.RuneCountInString(string(value))
+		//if size <= 3 {
+		//	new_content += string(value)
+		//	}
+		//}
+	}
+	return new_content
+}
+
 func main() {
-	var emojiRx = regexp.MustCompile(`[\x{1F600}-\x{1F6FF}|[\x{2600}-\x{26FF}]`)
 	db, err := sql.Open("mysql", "root:znhl2017UP@tcp(tlwl2020.mysql.rds.aliyuncs.com:3686)/fbox?charset=utf8mb4")
 	if err != nil {
 		panic(err.Error())
@@ -65,8 +79,8 @@ func main() {
 		err = rows.Scan(&id, &content, &comments)
 		rs += id + "-" + content + "-" + comments + "\n"
 	}
-	fmt.Printf(emojiRx.ReplaceAllString(rs, `[e]`))
-	WriteWithIo("data.sql", rs)
+	fmt.Printf(FilterEmoji(rs))
+	WriteWithIo("data.sql", FilterEmoji(rs))
 	err = rows.Err()
 	if err != nil {
 		panic(err.Error())
