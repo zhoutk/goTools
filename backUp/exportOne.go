@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"../common"
 	"../db"
-	"reflect"
 )
 
 func ExportOne(fields common.DbConnFields, workDir string) {
@@ -31,17 +30,31 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 	sqlStr := "select CONSTRAINT_NAME,TABLE_NAME,COLUMN_NAME,REFERENCED_TABLE_SCHEMA," +
 		"REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME from information_schema.`KEY_COLUMN_USAGE` " +
 		"where REFERENCED_TABLE_SCHEMA = ? "
-	values := make([]interface{}, 0)
+	var values []interface{}
 	values = append(values, fields.DbName)
 	rs, err := db.ExecuteWithDbConn(sqlStr, values, fields)
 	if err != nil{
 		fmt.Print(err)
 		return
 	}
-	for key, value := range rs{
-		fmt.Println(reflect.TypeOf(value).String())
-		fmt.Println(key, value)
+	rows := rs["rows"].([]map[string]string)
+	FKEYS := make(map[string]interface{})
+	for i := 0; i < len(rows); i++ {
+		if _, ok := FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]]; !ok {
+			FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]] = map[string]interface{}{
+				"constraintName": rows[i]["CONSTRAINT_NAME"],
+				"sourceCols":     make([]interface{}, 0),
+				"schema":         rows[i]["REFERENCED_TABLE_SCHEMA"],
+				"tableName":      rows[i]["REFERENCED_TABLE_NAME"],
+				"targetCols":     make([]interface{}, 0),
+			}
+		}
+		FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"] =
+			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"].([]interface{}), rows[i]["COLUMN_NAME"])
+		FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"] =
+			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"].([]interface{}), rows[i]["COLUMN_NAME"])
 	}
+	fmt.Print(FKEYS)
 }
 
 func writeToFile(name string, content string, append bool)  {
