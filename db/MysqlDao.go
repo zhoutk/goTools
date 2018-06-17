@@ -5,6 +5,7 @@ import (
 	mysql "database/sql"
 	"os"
 	"encoding/json"
+	"strconv"
 )
 
 func Query(sql string, values []interface{}) (map[string]interface{}, error) {
@@ -22,7 +23,7 @@ func execute(sql string, values []interface{}) (map[string]interface{}, error)  
 
 	dbConf := confs["db_"+dialect+"_config"].(map[string]interface{})
 	dbHost := dbConf["db_host"].(string)
-	dbPort := dbConf["db_port"].(string)
+	dbPort := strconv.FormatFloat(dbConf["db_port"].(float64), 'f', -1, 32)
 	dbUser := dbConf["db_user"].(string)
 	dbPass := dbConf["db_pass"].(string)
 	dbName := dbConf["db_name"].(string)

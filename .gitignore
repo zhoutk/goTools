@@ -1,5 +1,6 @@
 # Diy
 **/configs.*
+**/*.sql
 
 # Binaries for programs and plugins
 *.exe
