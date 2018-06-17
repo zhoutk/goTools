@@ -3,6 +3,8 @@ package db
 import (
 	_ "github.com/go-sql-driver/mysql"
 	mysql "database/sql"
+	"os"
+	"encoding/json"
 )
 
 func Query(sql string, values []interface{}) (map[string]interface{}, error) {
@@ -10,8 +12,24 @@ func Query(sql string, values []interface{}) (map[string]interface{}, error) {
 }
 
 func execute(sql string, values []interface{}) (map[string]interface{}, error)  {
+	var configs interface{}
+	fr, err := os.Open("./configs.json")
+	decoder := json.NewDecoder(fr)
+	err = decoder.Decode(&configs)
+
+	confs := configs.(map[string]interface{})
+	dialect := confs["database_dialect"].(string)
+
+	dbConf := confs["db_"+dialect+"_config"].(map[string]interface{})
+	dbHost := dbConf["db_host"].(string)
+	dbPort := dbConf["db_port"].(string)
+	dbUser := dbConf["db_user"].(string)
+	dbPass := dbConf["db_pass"].(string)
+	dbName := dbConf["db_name"].(string)
+	dbCharset := dbConf["db_charset"].(string)
+
 	rs := make(map[string]interface{})
-	dao, err := mysql.Open("mysql", "root:znhl2017UP@tcp(tlwl2020.mysql.rds.aliyuncs.com:3686)/fbox?charset=utf8mb4")
+	dao, err := mysql.Open(dialect, dbUser + ":"+dbPass+"@tcp("+dbHost+":"+dbPort+")/"+dbName+"?charset="+dbCharset)
 	defer dao.Close()
 	if err != nil {
 		rs["code"] = 204
