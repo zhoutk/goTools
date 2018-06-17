@@ -4,17 +4,8 @@ import (
 	"strings"
 	"encoding/json"
 	"os"
+	"../common"
 )
-
-type DbConnFields struct {
-	dbHost    string
-	dbPort    int
-	dbUser    string
-	dbPass    string
-	dbName    string
-	dbCharset string
-	fileAlias string
-}
 
 func Export() (bool, error) {
 	var configs interface{}
@@ -32,16 +23,16 @@ func Export() (bool, error) {
 	for key, value := range confs {
 		if strings.HasPrefix(key, "db_") {
 			dbConf := value.(map[string]interface{})
-			dbConn := DbConnFields{
-				dbHost:    dbConf["db_host"].(string),
-				dbPort:    int(dbConf["db_port"].(float64)),
-				dbUser:    dbConf["db_user"].(string),
-				dbPass:    dbConf["db_pass"].(string),
-				dbName:    dbConf["db_name"].(string),
-				dbCharset: dbConf["db_charset"].(string),
+			dbConn := common.DbConnFields{
+				DbHost:    dbConf["db_host"].(string),
+				DbPort:    int(dbConf["db_port"].(float64)),
+				DbUser:    dbConf["db_user"].(string),
+				DbPass:    dbConf["db_pass"].(string),
+				DbName:    dbConf["db_name"].(string),
+				DbCharset: dbConf["db_charset"].(string),
 			}
 			if dbConf["file_alias"] != nil {
-				dbConn.fileAlias = dbConf["file_alias"].(string)
+				dbConn.FileAlias = dbConf["file_alias"].(string)
 			}
 			ExportOne(dbConn, workDir)
 		}

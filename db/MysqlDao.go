@@ -6,7 +6,53 @@ import (
 	"os"
 	"encoding/json"
 	"strconv"
+	"../common"
 )
+
+func ExecuteWithDbConn(sql string, values []interface{}, fields common.DbConnFields) (map[string]interface{}, error)  {
+	rs := make(map[string]interface{})
+	dao, err := mysql.Open("mysql", fields.DbUser + ":"+fields.DbPass+"@tcp("+fields.DbHost+":"+
+		strconv.Itoa(fields.DbPort)+")/"+fields.DbName+"?charset="+fields.DbCharset)
+	defer dao.Close()
+	if err != nil {
+		rs["code"] = 204
+		return rs, err
+	}
+	stmt, err := dao.Prepare(sql)
+	if err != nil {
+		rs["code"] = 204
+		return rs, err
+	}
+	rows, err := stmt.Query(values...)
+	if err != nil {
+		rs["code"] = 204
+		return rs, err
+	}
+
+	columns, err := rows.Columns()
+	vs := make([]mysql.RawBytes, len(columns))
+	scans := make([]interface{}, len(columns))
+
+	for i := range vs {
+		scans[i] = &vs[i]
+	}
+
+	var result []map[string]string
+	for rows.Next() {
+		_ = rows.Scan(scans...)
+		each := make(map[string]string)
+
+		for i, col := range vs {
+			each[columns[i]] = FilterHolder(string(col))
+		}
+
+		result = append(result, each)
+	}
+	rs["code"] = 200
+	//data, _ := json.Marshal(result)
+	rs["rows"] = result
+	return rs, err
+}
 
 func Query(sql string, values []interface{}) (map[string]interface{}, error) {
 	return execute(sql, values)
