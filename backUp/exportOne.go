@@ -8,6 +8,7 @@ import (
 	"../common"
 	"../db"
 	"encoding/json"
+	"github.com/zhoutk/jsonparser"
 )
 
 func ExportOne(fields common.DbConnFields, workDir string) {
@@ -39,21 +40,24 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		return
 	}
 	rows := rs["rows"].([]map[string]string)
-	FKEYS := make(map[string]interface{})
+	FKEYS := []byte(`{}`)
+	d1 := []byte(``)
 	for i := 0; i < len(rows); i++ {
-		if _, ok := FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]]; !ok {
-			FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]] = map[string]interface{}{
-				"constraintName": rows[i]["CONSTRAINT_NAME"],
-				"sourceCols":     make([]interface{}, 0),
-				"schema":         rows[i]["REFERENCED_TABLE_SCHEMA"],
-				"tableName":      rows[i]["REFERENCED_TABLE_NAME"],
-				"targetCols":     make([]interface{}, 0),
-			}
+		data, _, _, err := jsonparser.Get(FKEYS, rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"])
+		if err != nil {
+			value := []byte(`{"constraintName":` + rows[i]["CONSTRAINT_NAME"] + `,"sourceCols":["namkkk"],"schema":`+
+				rows[i]["REFERENCED_TABLE_SCHEMA"]+`,"tableName":`+rows[i]["REFERENCED_TABLE_NAME"]+
+				`,"targetCols":[]}`)
+			d1,_ = jsonparser.Set(FKEYS, value,rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"])
+			fmt.Print(d1)
 		}
-		FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"] =
-			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"].([]interface{}), rows[i]["COLUMN_NAME"])
-		FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"] =
-			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"].([]interface{}), rows[i]["COLUMN_NAME"])
+		d, st, index, err := jsonparser.Get(d1, rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"], "sourceCols")
+		//d = append(d, rows[i]["COLUMN_NAME"])
+		fmt.Print(d,st,index,data)
+		//FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"] =
+		//	append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"].([]interface{}), rows[i]["COLUMN_NAME"])
+		//FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"] =
+		//	append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"].([]interface{}), rows[i]["COLUMN_NAME"])
 	}
 	data, _ := json.Marshal(FKEYS)
 	fmt.Print(string(data))
