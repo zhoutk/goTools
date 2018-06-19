@@ -1,6 +1,12 @@
 package main
 
-import "./backUp"
+import (
+	"./backUp"
+	"fmt"
+)
 func main()  {
-	backUp.Export()
+	err := backUp.Export()
+	if err != nil{
+		fmt.Println(err)
+	}
 }

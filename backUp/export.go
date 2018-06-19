@@ -7,16 +7,16 @@ import (
 	"../common"
 )
 
-func Export() (bool, error) {
+func Export() (error) {
 	var configs interface{}
 	fr, err := os.Open("./configs.json")
 	if err != nil {
-		return false, err
+		return err
 	}
 	decoder := json.NewDecoder(fr)
 	err = decoder.Decode(&configs)
 	if err != nil {
-		return false, err
+		return err
 	}
 	confs := configs.(map[string]interface{})
 	workDir := confs["workDir"].(string)
@@ -37,5 +37,5 @@ func Export() (bool, error) {
 			ExportOne(dbConn, workDir)
 		}
 	}
-	return true, nil
+	return nil
 }

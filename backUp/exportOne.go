@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"../common"
 	"../db"
+	"encoding/json"
 )
 
 func ExportOne(fields common.DbConnFields, workDir string) {
@@ -54,7 +55,8 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"] =
 			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"].([]interface{}), rows[i]["COLUMN_NAME"])
 	}
-	fmt.Print(FKEYS)
+	data, _ := json.Marshal(FKEYS)
+	fmt.Print(string(data))
 }
 
 func writeToFile(name string, content string, append bool)  {
