@@ -41,19 +41,20 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 	}
 	rows := rs["rows"].([]map[string]string)
 	FKEYS := []byte(`{}`)
-	d1 := []byte(``)
+	d0 := []byte(``)
 	for i := 0; i < len(rows); i++ {
-		data, _, _, err := jsonparser.Get(FKEYS, rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"])
+		_, _, _, err := jsonparser.Get(FKEYS, rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"])
 		if err != nil {
-			value := []byte(`{"constraintName":` + rows[i]["CONSTRAINT_NAME"] + `,"sourceCols":["namkkk"],"schema":`+
+			value := []byte(`{"constraintName":` + rows[i]["CONSTRAINT_NAME"] + `,"sourceCols":["你好"],"schema":`+
 				rows[i]["REFERENCED_TABLE_SCHEMA"]+`,"tableName":`+rows[i]["REFERENCED_TABLE_NAME"]+
 				`,"targetCols":[]}`)
-			d1,_ = jsonparser.Set(FKEYS, value,rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"])
-			fmt.Print(d1)
+			d0,_ = jsonparser.Set(FKEYS, value,rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"])
 		}
-		d, st, index, err := jsonparser.Get(d1, rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"], "sourceCols")
-		//d = append(d, rows[i]["COLUMN_NAME"])
-		fmt.Print(d,st,index,data)
+		d, _, _, err := jsonparser.Get(d0, rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"], "sourceCols")
+		d1 := toStringArray(d)
+		d1 = append(d1, rows[i]["COLUMN_NAME"])
+
+		FKEYS,_ = jsonparser.Set(d0, stringArrToByteArr(d1), rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"], "sourceCols")
 		//FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"] =
 		//	append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"].([]interface{}), rows[i]["COLUMN_NAME"])
 		//FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"] =
@@ -61,6 +62,31 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 	}
 	data, _ := json.Marshal(FKEYS)
 	fmt.Print(string(data))
+}
+
+func stringArrToByteArr(str []string) (x []byte) {
+	x = append(x, '[')
+	for i:=0; i<len(str); i++{
+		b := []rune(str[i])
+		x = append(x, '"')
+			tmp := []byte(string(b))
+			for j:=0; j < len(tmp); j++ {
+				x = append(x, tmp[j])
+			}
+		x = append(x, '"')
+		if i < len(str) -1 {
+			x = append(x, ',')
+		}
+	}
+	x = append(x, ']')
+	return
+}
+
+func toStringArray(data []byte) (result []string) {
+	jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		result = append(result, string(value))
+	})
+	return
 }
 
 func writeToFile(name string, content string, append bool)  {
