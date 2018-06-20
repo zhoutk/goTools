@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"../common"
 	"../db"
-	"encoding/json"
+	"strings"
 )
 
 func ExportOne(fields common.DbConnFields, workDir string) {
@@ -68,8 +68,8 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		return
 	}
 	tbRs := rs["rows"].([]map[string]string)
-	data, _ := json.Marshal(tbRs)
-	fmt.Print(string(data))
+	//data, _ := json.Marshal(tbRs)
+	//fmt.Print(string(data))
 	for _, tbAl := range tbRs{
 		sqlStr = "SELECT	`COLUMNS`.COLUMN_NAME,`COLUMNS`.COLUMN_TYPE,`COLUMNS`.IS_NULLABLE," +
 					"`COLUMNS`.CHARACTER_SET_NAME,`COLUMNS`.COLUMN_DEFAULT,`COLUMNS`.EXTRA," +
@@ -88,6 +88,69 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		colRs := rs["rows"].([]map[string]string)
 		//data, _ := json.Marshal(colRs)
 		//fmt.Print(string(data))
+		tableName := tbAl["TABLE_NAME"]
+		//tableEngine := tbAl["ENGINE"]
+		//tableRowFormat := tbAl["ROW_FORMAT"]
+		//tableAutoIncrement := tbAl["AUTO_INCREMENT"]
+		tableCollation := tbAl["TABLE_COLLATION"]
+		tableCharset := strings.Split(tableCollation, "_")[0]
+		//tableCreateOptions := tbAl["CREATE_OPTIONS"]
+		//tableComment := tbAl["TABLE_COMMENT"]
+
+		strExport := "DROP TABLE IF EXISTS `" + tbAl["TABLE_NAME"] + "`;\n"
+		strExport += "CREATE TABLE `" + tableName + "` (\n"
+
+		theTableColSet := make(map[string]int)
+		var allFields []string
+		var defaultValue string
+		for _, colAl := range colRs{
+			if _, ok := theTableColSet[colAl["COLUMN_NAME"]]; !ok {
+				theTableColSet[colAl["COLUMN_NAME"]] = 1
+				allFields = append(allFields, colAl["COLUMN_NAME"])
+				if len(colAl["COLUMN_DEFAULT"]) > 0{
+					if colAl["COLUMN_DEFAULT"] == "CURRENT_TIMESTAMP"{
+						defaultValue = colAl["COLUMN_DEFAULT"]
+					}else{
+						defaultValue = "'" + colAl["COLUMN_DEFAULT"] + "'"
+					}
+				}
+				var charSet string
+				if len(colAl["CHARACTER_SET_NAME"]) > 0 && colAl["CHARACTER_SET_NAME"] != tableCharset {
+					charSet = " CHARACTER SET " + colAl["CHARACTER_SET_NAME"]
+				}
+				var collation string
+				if len(colAl["COLLATION_NAME"]) > 0 && colAl["COLLATION_NAME"] != tableCollation {
+					collation = " COLLATE " + colAl["COLLATION_NAME"]
+				}
+				var nullStr string
+				if colAl["IS_NULLABLE"] == "NO" {
+					nullStr = " NOT NULL"
+				}
+				if len(colAl["COLUMN_DEFAULT"]) > 0 {
+					defaultValue = " DEFAULT " + defaultValue
+				}else{
+					if colAl["IS_NULLABLE"] == "NO"{
+						defaultValue = ""
+					}else{
+						defaultValue = " DEFAULT NULL"
+					}
+				}
+				var space string
+				if len(colAl["EXTRA"]) > 0 {
+					space = " " + colAl["EXTRA"]
+				}else{
+					space = ""
+				}
+				var cstr string
+				if len(colAl["COLUMN_COMMENT"]) > 0 {
+					cstr = " COMMENT '" + colAl["COLUMN_COMMENT"] + "'"
+				}
+				strExport += "  `" + colAl["COLUMN_NAME"] + "` " + colAl["COLUMN_TYPE"] + charSet + collation +
+					nullStr + defaultValue + space + cstr + ",\n"
+			}
+		}
+		writeToFile(fileName, strExport, true)
+		break
 	}
 }
 
