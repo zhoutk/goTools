@@ -55,8 +55,40 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"] =
 			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"].([]interface{}), rows[i]["COLUMN_NAME"])
 	}
-	data, _ := json.Marshal(FKEYS)
+	//data, _ := json.Marshal(FKEYS)
+	//fmt.Print(string(data))
+
+	sqlStr = "select TABLE_NAME,ENGINE,ROW_FORMAT,AUTO_INCREMENT,TABLE_COLLATION,CREATE_OPTIONS,TABLE_COMMENT" +
+		" from information_schema.`TABLES` where TABLE_SCHEMA = ? and TABLE_TYPE = ? order by TABLE_NAME"
+	values = make([]interface{}, 0)
+	values = append(values, fields.DbName, "BASE TABLE")
+	rs, err = db.ExecuteWithDbConn(sqlStr, values, fields)
+	if err != nil{
+		fmt.Print(err)
+		return
+	}
+	tbRs := rs["rows"].([]map[string]string)
+	data, _ := json.Marshal(tbRs)
 	fmt.Print(string(data))
+	for _, tbAl := range tbRs{
+		sqlStr = "SELECT	`COLUMNS`.COLUMN_NAME,`COLUMNS`.COLUMN_TYPE,`COLUMNS`.IS_NULLABLE," +
+					"`COLUMNS`.CHARACTER_SET_NAME,`COLUMNS`.COLUMN_DEFAULT,`COLUMNS`.EXTRA," +
+                    "`COLUMNS`.COLUMN_KEY,`COLUMNS`.COLUMN_COMMENT,`STATISTICS`.TABLE_NAME," +
+                    "`STATISTICS`.INDEX_NAME,`STATISTICS`.SEQ_IN_INDEX,`STATISTICS`.NON_UNIQUE," +
+                    "`COLUMNS`.COLLATION_NAME " +
+                    "FROM information_schema.`COLUMNS` " +
+                    "LEFT JOIN information_schema.`STATISTICS` ON " +
+                    "information_schema.`COLUMNS`.TABLE_NAME = `STATISTICS`.TABLE_NAME " +
+                    "AND information_schema.`COLUMNS`.COLUMN_NAME = information_schema.`STATISTICS`.COLUMN_NAME " +
+                    "AND information_schema.`STATISTICS`.table_schema = ? " +
+                    "where information_schema.`COLUMNS`.TABLE_NAME = ? and `COLUMNS`.table_schema = ?"
+		values = make([]interface{}, 0)
+		values = append(values, fields.DbName, tbAl["TABLE_NAME"],fields.DbName)
+		rs, err = db.ExecuteWithDbConn(sqlStr, values, fields)
+		colRs := rs["rows"].([]map[string]string)
+		//data, _ := json.Marshal(colRs)
+		//fmt.Print(string(data))
+	}
 }
 
 func writeToFile(name string, content string, append bool)  {
