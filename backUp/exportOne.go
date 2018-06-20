@@ -19,12 +19,12 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 	}
 
 	content := "/*   Mysql export" +
-		"\n\n		Host: " + fields.DbHost +
-		"\n\n		Port: " + strconv.Itoa(fields.DbPort) +
-		"\n\n		DataBase: " + fields.DbName +
-		"\n\n		Date: " + time.Now().Format("2006-01-02 15:04:05") +
-		"\n\n		Author: zhoutk@189.cn" +
-		"\n\n		Copyright: tlwl-2018" +
+		"\n		Host: " + fields.DbHost +
+		"\n		Port: " + strconv.Itoa(fields.DbPort) +
+		"\n		DataBase: " + fields.DbName +
+		"\n		Date: " + time.Now().Format("2006-01-02 15:04:05") +
+		"\n		Author: zhoutk@189.cn" +
+		"\n		Copyright: tlwl-2018" +
 		"\n*/\n\n"
 	writeToFile(fileName, content, false)
 	writeToFile(fileName, "SET FOREIGN_KEY_CHECKS=0;\n\n", true)
@@ -53,7 +53,7 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"] =
 			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"].([]string), rows[i]["COLUMN_NAME"])
 		FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"] =
-			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"].([]string), rows[i]["COLUMN_NAME"])
+			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"].([]string), rows[i]["REFERENCED_COLUMN_NAME"])
 	}
 
 	sqlStr = "select TABLE_NAME,ENGINE,ROW_FORMAT,AUTO_INCREMENT,TABLE_COLLATION,CREATE_OPTIONS,TABLE_COMMENT" +
