@@ -173,7 +173,7 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		}
 
 		for k, v := range FKEYS {
-			if strings.HasPrefix(k, tableName) {
+			if strings.HasPrefix(k, tableName+".") {
 				strExport += "  CONSTRAINT `" + v.(map[string]interface{})["constraintName"].(string) + "` FOREIGN KEY (`" +
 					strings.Join(v.(map[string]interface{})["sourceCols"].([]string), "`,`") + "`) REFERENCES `" +
 					v.(map[string]interface{})["tableName"].(string) + "` (`" +
