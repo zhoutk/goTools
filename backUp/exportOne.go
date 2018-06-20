@@ -44,19 +44,17 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		if _, ok := FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]]; !ok {
 			FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]] = map[string]interface{}{
 				"constraintName": rows[i]["CONSTRAINT_NAME"],
-				"sourceCols":     make([]interface{}, 0),
+				"sourceCols":     make([]string, 0),
 				"schema":         rows[i]["REFERENCED_TABLE_SCHEMA"],
 				"tableName":      rows[i]["REFERENCED_TABLE_NAME"],
-				"targetCols":     make([]interface{}, 0),
+				"targetCols":     make([]string, 0),
 			}
 		}
 		FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"] =
-			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"].([]interface{}), rows[i]["COLUMN_NAME"])
+			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"].([]string), rows[i]["COLUMN_NAME"])
 		FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"] =
-			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"].([]interface{}), rows[i]["COLUMN_NAME"])
+			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"].([]string), rows[i]["COLUMN_NAME"])
 	}
-	//data, _ := json.Marshal(FKEYS)
-	//fmt.Print(string(data))
 
 	sqlStr = "select TABLE_NAME,ENGINE,ROW_FORMAT,AUTO_INCREMENT,TABLE_COLLATION,CREATE_OPTIONS,TABLE_COMMENT" +
 		" from information_schema.`TABLES` where TABLE_SCHEMA = ? and TABLE_TYPE = ? order by TABLE_NAME"
@@ -68,8 +66,6 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		return
 	}
 	tbRs := rs["rows"].([]map[string]string)
-	//data, _ := json.Marshal(tbRs)
-	//fmt.Print(string(data))
 	for _, tbAl := range tbRs{
 		sqlStr = "SELECT	`COLUMNS`.COLUMN_NAME,`COLUMNS`.COLUMN_TYPE,`COLUMNS`.IS_NULLABLE," +
 					"`COLUMNS`.CHARACTER_SET_NAME,`COLUMNS`.COLUMN_DEFAULT,`COLUMNS`.EXTRA," +
@@ -86,20 +82,21 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		values = append(values, fields.DbName, tbAl["TABLE_NAME"],fields.DbName)
 		rs, err = db.ExecuteWithDbConn(sqlStr, values, fields)
 		colRs := rs["rows"].([]map[string]string)
-		//data, _ := json.Marshal(colRs)
-		//fmt.Print(string(data))
 		tableName := tbAl["TABLE_NAME"]
-		//tableEngine := tbAl["ENGINE"]
+		tableEngine := tbAl["ENGINE"]
 		//tableRowFormat := tbAl["ROW_FORMAT"]
-		//tableAutoIncrement := tbAl["AUTO_INCREMENT"]
+		tableAutoIncrement := tbAl["AUTO_INCREMENT"]
 		tableCollation := tbAl["TABLE_COLLATION"]
 		tableCharset := strings.Split(tableCollation, "_")[0]
-		//tableCreateOptions := tbAl["CREATE_OPTIONS"]
-		//tableComment := tbAl["TABLE_COMMENT"]
+		tableCreateOptions := tbAl["CREATE_OPTIONS"]
+		tableComment := tbAl["TABLE_COMMENT"]
 
 		strExport := "DROP TABLE IF EXISTS `" + tbAl["TABLE_NAME"] + "`;\n"
 		strExport += "CREATE TABLE `" + tableName + "` (\n"
 
+		priKey := make(map[string]interface{})
+		colKey := make(map[string]interface{})
+		mulKey := make(map[string]interface{})
 		theTableColSet := make(map[string]int)
 		var allFields []string
 		var defaultValue string
@@ -148,9 +145,57 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 				strExport += "  `" + colAl["COLUMN_NAME"] + "` " + colAl["COLUMN_TYPE"] + charSet + collation +
 					nullStr + defaultValue + space + cstr + ",\n"
 			}
+			if len(colAl["INDEX_NAME"]) > 0 && colAl["INDEX_NAME"] == "PRIMARY" {
+				if _, ok := priKey[colAl["INDEX_NAME"]]; !ok {
+					priKey[colAl["INDEX_NAME"]] = make([]string,0)
+				}
+				priKey[colAl["INDEX_NAME"]] = append(priKey[colAl["INDEX_NAME"]].([]string), colAl["COLUMN_NAME"])
+			}else if len(colAl["INDEX_NAME"]) > 0 && colAl["NON_UNIQUE"] == "0" {
+				if _, ok := colKey[colAl["INDEX_NAME"]]; !ok {
+					colKey[colAl["INDEX_NAME"]] = make([]string,0)
+				}
+				colKey[colAl["INDEX_NAME"]] = append(colKey[colAl["INDEX_NAME"]].([]string), colAl["COLUMN_NAME"])
+			}else if len(colAl["INDEX_NAME"]) > 0 && colAl["NON_UNIQUE"] == "1" {
+				if _, ok := mulKey[colAl["INDEX_NAME"]]; !ok {
+					mulKey[colAl["INDEX_NAME"]] = make([]string,0)
+				}
+				mulKey[colAl["INDEX_NAME"]] = append(mulKey[colAl["INDEX_NAME"]].([]string), colAl["COLUMN_NAME"])
+			}
 		}
+		for _, v := range priKey {
+			strExport += "  PRIMARY KEY (`" + strings.Join(v.([]string), "`,`") + "`),\n"
+		}
+		for k, v := range colKey {
+			strExport += "  UNIQUE KEY `"+k+"` (`" + strings.Join(v.([]string), "`,`") + "`),\n"
+		}
+		for k, v := range mulKey {
+			strExport += "  KEY `"+k+"` (`" + strings.Join(v.([]string), "`,`") + "`),\n"
+		}
+
+		for k, v := range FKEYS {
+			if strings.HasPrefix(k, tableName) {
+				strExport += "  CONSTRAINT `" + v.(map[string]interface{})["constraintName"].(string) + "` FOREIGN KEY (`" +
+					strings.Join(v.(map[string]interface{})["sourceCols"].([]string), "`,`") + "`) REFERENCES `" +
+					v.(map[string]interface{})["tableName"].(string) + "` (`" +
+					strings.Join(v.(map[string]interface{})["targetCols"].([]string), "`,`") + "`),\n"
+			}
+		}
+		if strings.HasSuffix(strExport, ",\n") {
+			strExport = strExport[:len(strExport)-2]
+		}
+
+		var incr string
+		if len(tableAutoIncrement) > 0 {
+			incr = " AUTO_INCREMENT=" + tableAutoIncrement
+		}
+		var colla string
+		if len(tableCollation) > 0 {
+			colla = " COLLATE=" + tableCollation
+		}
+		strExport += "\n) ENGINE=" + tableEngine + incr + " DEFAULT CHARSET=" +
+			tableCharset + colla + " " + tableCreateOptions + " COMMENT='" + tableComment + "';\n\n"
+
 		writeToFile(fileName, strExport, true)
-		break
 	}
 }
 
