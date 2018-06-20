@@ -8,7 +8,6 @@ import (
 	"../common"
 	"../db"
 	"encoding/json"
-	"github.com/zhoutk/jsonparser"
 )
 
 func ExportOne(fields common.DbConnFields, workDir string) {
@@ -40,53 +39,24 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		return
 	}
 	rows := rs["rows"].([]map[string]string)
-	FKEYS := []byte(`{}`)
-	d0 := []byte(``)
+	FKEYS := make(map[string]interface{})
 	for i := 0; i < len(rows); i++ {
-		_, _, _, err := jsonparser.Get(FKEYS, rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"])
-		if err != nil {
-			value := []byte(`{"constraintName":` + rows[i]["CONSTRAINT_NAME"] + `,"sourceCols":["你好"],"schema":`+
-				rows[i]["REFERENCED_TABLE_SCHEMA"]+`,"tableName":`+rows[i]["REFERENCED_TABLE_NAME"]+
-				`,"targetCols":[]}`)
-			d0,_ = jsonparser.Set(FKEYS, value,rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"])
+		if _, ok := FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]]; !ok {
+			FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]] = map[string]interface{}{
+				"constraintName": rows[i]["CONSTRAINT_NAME"],
+				"sourceCols":     make([]interface{}, 0),
+				"schema":         rows[i]["REFERENCED_TABLE_SCHEMA"],
+				"tableName":      rows[i]["REFERENCED_TABLE_NAME"],
+				"targetCols":     make([]interface{}, 0),
+			}
 		}
-		d, _, _, err := jsonparser.Get(d0, rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"], "sourceCols")
-		d1 := toStringArray(d)
-		d1 = append(d1, rows[i]["COLUMN_NAME"])
-
-		FKEYS,_ = jsonparser.Set(d0, stringArrToByteArr(d1), rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"], "sourceCols")
-		//FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"] =
-		//	append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"].([]interface{}), rows[i]["COLUMN_NAME"])
-		//FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"] =
-		//	append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"].([]interface{}), rows[i]["COLUMN_NAME"])
+		FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"] =
+			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"].([]interface{}), rows[i]["COLUMN_NAME"])
+		FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"] =
+			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"].([]interface{}), rows[i]["COLUMN_NAME"])
 	}
 	data, _ := json.Marshal(FKEYS)
 	fmt.Print(string(data))
-}
-
-func stringArrToByteArr(str []string) (x []byte) {
-	x = append(x, '[')
-	for i:=0; i<len(str); i++{
-		b := []rune(str[i])
-		x = append(x, '"')
-			tmp := []byte(string(b))
-			for j:=0; j < len(tmp); j++ {
-				x = append(x, tmp[j])
-			}
-		x = append(x, '"')
-		if i < len(str) -1 {
-			x = append(x, ',')
-		}
-	}
-	x = append(x, ']')
-	return
-}
-
-func toStringArray(data []byte) (result []string) {
-	jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-		result = append(result, string(value))
-	})
-	return
 }
 
 func writeToFile(name string, content string, append bool)  {
