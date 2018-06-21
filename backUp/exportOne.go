@@ -38,11 +38,11 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		fmt.Print(err)
 		return
 	}
-	rows := rs["rows"].([]map[string]string)
+	rows := rs["rows"].([]map[string]interface{})
 	FKEYS := make(map[string]interface{})
 	for i := 0; i < len(rows); i++ {
-		if _, ok := FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]]; !ok {
-			FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]] = map[string]interface{}{
+		if _, ok := FKEYS[rows[i]["TABLE_NAME"].(string)+"."+rows[i]["CONSTRAINT_NAME"].(string)]; !ok {
+			FKEYS[rows[i]["TABLE_NAME"].(string)+"."+rows[i]["CONSTRAINT_NAME"].(string)] = map[string]interface{}{
 				"constraintName": rows[i]["CONSTRAINT_NAME"],
 				"sourceCols":     make([]string, 0),
 				"schema":         rows[i]["REFERENCED_TABLE_SCHEMA"],
@@ -50,10 +50,10 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 				"targetCols":     make([]string, 0),
 			}
 		}
-		FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"] =
-			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["sourceCols"].([]string), rows[i]["COLUMN_NAME"])
-		FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"] =
-			append(FKEYS[rows[i]["TABLE_NAME"]+"."+rows[i]["CONSTRAINT_NAME"]].(map[string]interface{})["targetCols"].([]string), rows[i]["REFERENCED_COLUMN_NAME"])
+		FKEYS[rows[i]["TABLE_NAME"].(string)+"."+rows[i]["CONSTRAINT_NAME"].(string)].(map[string]interface{})["sourceCols"] =
+			append(FKEYS[rows[i]["TABLE_NAME"].(string)+"."+rows[i]["CONSTRAINT_NAME"].(string)].(map[string]interface{})["sourceCols"].([]string), rows[i]["COLUMN_NAME"].(string))
+		FKEYS[rows[i]["TABLE_NAME"].(string)+"."+rows[i]["CONSTRAINT_NAME"].(string)].(map[string]interface{})["targetCols"] =
+			append(FKEYS[rows[i]["TABLE_NAME"].(string)+"."+rows[i]["CONSTRAINT_NAME"].(string)].(map[string]interface{})["targetCols"].([]string), rows[i]["REFERENCED_COLUMN_NAME"].(string))
 	}
 
 	sqlStr = "select TABLE_NAME,ENGINE,ROW_FORMAT,AUTO_INCREMENT,TABLE_COLLATION,CREATE_OPTIONS,TABLE_COMMENT" +
@@ -65,7 +65,7 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		fmt.Print(err)
 		return
 	}
-	tbRs := rs["rows"].([]map[string]string)
+	tbRs := rs["rows"].([]map[string]interface{})
 	for _, tbAl := range tbRs{
 		sqlStr = "SELECT	`COLUMNS`.COLUMN_NAME,`COLUMNS`.COLUMN_TYPE,`COLUMNS`.IS_NULLABLE," +
 					"`COLUMNS`.CHARACTER_SET_NAME,`COLUMNS`.COLUMN_DEFAULT,`COLUMNS`.EXTRA," +
@@ -81,17 +81,17 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		values = make([]interface{}, 0)
 		values = append(values, fields.DbName, tbAl["TABLE_NAME"],fields.DbName)
 		rs, err = db.ExecuteWithDbConn(sqlStr, values, fields)
-		colRs := rs["rows"].([]map[string]string)
-		tableName := tbAl["TABLE_NAME"]
-		tableEngine := tbAl["ENGINE"]
+		colRs := rs["rows"].([]map[string]interface{})
+		tableName := tbAl["TABLE_NAME"].(string)
+		tableEngine := tbAl["ENGINE"].(string)
 		//tableRowFormat := tbAl["ROW_FORMAT"]
-		tableAutoIncrement := tbAl["AUTO_INCREMENT"]
-		tableCollation := tbAl["TABLE_COLLATION"]
+		tableAutoIncrement := tbAl["AUTO_INCREMENT"].(string)
+		tableCollation := tbAl["TABLE_COLLATION"].(string)
 		tableCharset := strings.Split(tableCollation, "_")[0]
-		tableCreateOptions := tbAl["CREATE_OPTIONS"]
-		tableComment := tbAl["TABLE_COMMENT"]
+		tableCreateOptions := tbAl["CREATE_OPTIONS"].(string)
+		tableComment := tbAl["TABLE_COMMENT"].(string)
 
-		strExport := "DROP TABLE IF EXISTS `" + tbAl["TABLE_NAME"] + "`;\n"
+		strExport := "DROP TABLE IF EXISTS `" + tbAl["TABLE_NAME"].(string) + "`;\n"
 		strExport += "CREATE TABLE `" + tableName + "` (\n"
 
 		priKey := make(map[string]interface{})
@@ -101,65 +101,65 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		var allFields []string
 		var defaultValue string
 		for _, colAl := range colRs{
-			if _, ok := theTableColSet[colAl["COLUMN_NAME"]]; !ok {
-				theTableColSet[colAl["COLUMN_NAME"]] = 1
-				allFields = append(allFields, colAl["COLUMN_NAME"])
-				if len(colAl["COLUMN_DEFAULT"]) > 0{
+			if _, ok := theTableColSet[colAl["COLUMN_NAME"].(string)]; !ok {
+				theTableColSet[colAl["COLUMN_NAME"].(string)] = 1
+				allFields = append(allFields, colAl["COLUMN_NAME"].(string))
+				if colAl["COLUMN_DEFAULT"] != nil && len(colAl["COLUMN_DEFAULT"].(string)) > 0{
 					if colAl["COLUMN_DEFAULT"] == "CURRENT_TIMESTAMP"{
-						defaultValue = colAl["COLUMN_DEFAULT"]
+						defaultValue = colAl["COLUMN_DEFAULT"].(string)
 					}else{
-						defaultValue = "'" + colAl["COLUMN_DEFAULT"] + "'"
+						defaultValue = "'" + colAl["COLUMN_DEFAULT"].(string) + "'"
 					}
 				}
 				var charSet string
-				if len(colAl["CHARACTER_SET_NAME"]) > 0 && colAl["CHARACTER_SET_NAME"] != tableCharset {
-					charSet = " CHARACTER SET " + colAl["CHARACTER_SET_NAME"]
+				if colAl["CHARACTER_SET_NAME"] != nil && colAl["CHARACTER_SET_NAME"] != tableCharset {
+					charSet = " CHARACTER SET " + colAl["CHARACTER_SET_NAME"].(string)
 				}
 				var collation string
-				if len(colAl["COLLATION_NAME"]) > 0 && colAl["COLLATION_NAME"] != tableCollation {
-					collation = " COLLATE " + colAl["COLLATION_NAME"]
+				if colAl["COLLATION_NAME"] != nil && colAl["COLLATION_NAME"] != tableCollation {
+					collation = " COLLATE " + colAl["COLLATION_NAME"].(string)
 				}
 				var nullStr string
-				if colAl["IS_NULLABLE"] == "NO" {
+				if colAl["IS_NULLABLE"] != nil && colAl["IS_NULLABLE"] == "NO" {
 					nullStr = " NOT NULL"
 				}
-				if len(colAl["COLUMN_DEFAULT"]) > 0 {
+				if colAl["COLUMN_DEFAULT"] != nil && len(colAl["COLUMN_DEFAULT"].(string)) > 0 {
 					defaultValue = " DEFAULT " + defaultValue
 				}else{
-					if colAl["IS_NULLABLE"] == "NO"{
+					if colAl["IS_NULLABLE"] != nil && colAl["IS_NULLABLE"] == "NO"{
 						defaultValue = ""
 					}else{
 						defaultValue = " DEFAULT NULL"
 					}
 				}
 				var space string
-				if len(colAl["EXTRA"]) > 0 {
-					space = " " + colAl["EXTRA"]
+				if colAl["EXTRA"] != nil && len(colAl["EXTRA"].(string)) > 0 {
+					space = " " + colAl["EXTRA"].(string)
 				}else{
 					space = ""
 				}
 				var cstr string
-				if len(colAl["COLUMN_COMMENT"]) > 0 {
-					cstr = " COMMENT '" + escape(colAl["COLUMN_COMMENT"]) + "'"
+				if colAl["COLUMN_COMMENT"] != nil && len(colAl["COLUMN_COMMENT"].(string)) > 0 {
+					cstr = " COMMENT '" + escape(colAl["COLUMN_COMMENT"].(string)) + "'"
 				}
-				strExport += "  `" + colAl["COLUMN_NAME"] + "` " + colAl["COLUMN_TYPE"] + charSet + collation +
+				strExport += "  `" + colAl["COLUMN_NAME"].(string) + "` " + colAl["COLUMN_TYPE"].(string) + charSet + collation +
 					nullStr + defaultValue + space + cstr + ",\n"
 			}
-			if len(colAl["INDEX_NAME"]) > 0 && colAl["INDEX_NAME"] == "PRIMARY" {
-				if _, ok := priKey[colAl["INDEX_NAME"]]; !ok {
-					priKey[colAl["INDEX_NAME"]] = make([]string,0)
+			if colAl["INDEX_NAME"] != nil && colAl["INDEX_NAME"].(string) == "PRIMARY" {
+				if _, ok := priKey[colAl["INDEX_NAME"].(string)]; !ok {
+					priKey[colAl["INDEX_NAME"].(string)] = make([]string,0)
 				}
-				priKey[colAl["INDEX_NAME"]] = append(priKey[colAl["INDEX_NAME"]].([]string), colAl["COLUMN_NAME"])
-			}else if len(colAl["INDEX_NAME"]) > 0 && colAl["NON_UNIQUE"] == "0" {
-				if _, ok := colKey[colAl["INDEX_NAME"]]; !ok {
-					colKey[colAl["INDEX_NAME"]] = make([]string,0)
+				priKey[colAl["INDEX_NAME"].(string)] = append(priKey[colAl["INDEX_NAME"].(string)].([]string), colAl["COLUMN_NAME"].(string))
+			}else if colAl["INDEX_NAME"] != nil && colAl["NON_UNIQUE"] == "0" {
+				if _, ok := colKey[colAl["INDEX_NAME"].(string)]; !ok {
+					colKey[colAl["INDEX_NAME"].(string)] = make([]string,0)
 				}
-				colKey[colAl["INDEX_NAME"]] = append(colKey[colAl["INDEX_NAME"]].([]string), colAl["COLUMN_NAME"])
-			}else if len(colAl["INDEX_NAME"]) > 0 && colAl["NON_UNIQUE"] == "1" {
-				if _, ok := mulKey[colAl["INDEX_NAME"]]; !ok {
-					mulKey[colAl["INDEX_NAME"]] = make([]string,0)
+				colKey[colAl["INDEX_NAME"].(string)] = append(colKey[colAl["INDEX_NAME"].(string)].([]string), colAl["COLUMN_NAME"].(string))
+			}else if colAl["INDEX_NAME"] != nil && colAl["NON_UNIQUE"] == "1" {
+				if _, ok := mulKey[colAl["INDEX_NAME"].(string)]; !ok {
+					mulKey[colAl["INDEX_NAME"].(string)] = make([]string,0)
 				}
-				mulKey[colAl["INDEX_NAME"]] = append(mulKey[colAl["INDEX_NAME"]].([]string), colAl["COLUMN_NAME"])
+				mulKey[colAl["INDEX_NAME"].(string)] = append(mulKey[colAl["INDEX_NAME"].(string)].([]string), colAl["COLUMN_NAME"].(string))
 			}
 		}
 		for _, v := range priKey {
@@ -200,18 +200,18 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		//表中数据导出
 		sqlStr = "select " + strings.Join(allFields, ",") + " from " + tableName
 		rs, err = db.ExecuteWithDbConn(sqlStr, make([]interface{}, 0), fields)
-		recordsRs := rs["rows"].([]map[string]string)
+		recordsRs := rs["rows"].([]map[string]interface{})
 		for _, ele := range recordsRs {
 			strExport = "INSERT INTO `" + tableName + "` ("//+strings.Join(allFields, ",")+") VALUES ("
 			var ks []string
 			var vs []string
 			for k, v := range ele {
 				ks = append(ks, k)
-				var elStr string
-				if len(v) == 0 {
+				elStr := "''"
+				if v == nil {
 					elStr = "null"
-				}else{
-					elStr = "'" + escape(v) + "'"
+				}else if len(v.(string)) > 0 {
+					elStr = "'" + escape(v.(string)) + "'"
 				}
 				vs = append(vs, elStr)
 			}

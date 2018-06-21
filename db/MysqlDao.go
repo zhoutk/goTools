@@ -37,13 +37,17 @@ func ExecuteWithDbConn(sql string, values []interface{}, fields common.DbConnFie
 		scans[i] = &vs[i]
 	}
 
-	var result []map[string]string
+	var result []map[string]interface{}
 	for rows.Next() {
 		_ = rows.Scan(scans...)
-		each := make(map[string]string)
+		each := make(map[string]interface{})
 
 		for i, col := range vs {
-			each[columns[i]] = FilterHolder(string(col))
+			if col != nil {
+				each[columns[i]] = string(col)
+			}else{
+				each[columns[i]] = nil
+			}
 		}
 
 		result = append(result, each)
