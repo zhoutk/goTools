@@ -195,7 +195,29 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		strExport += "\n) ENGINE=" + tableEngine + incr + " DEFAULT CHARSET=" +
 			tableCharset + colla + " " + tableCreateOptions + " COMMENT='" + tableComment + "';\n\n"
 
-		writeToFile(fileName, strExport, true)
+		writeToFile(fileName, strExport, true)			//表结构导出
+
+		//表中数据导出
+		sqlStr = "select " + strings.Join(allFields, ",") + " from " + tableName
+		rs, err = db.ExecuteWithDbConn(sqlStr, make([]interface{}, 0), fields)
+		recordsRs := rs["rows"].([]map[string]string)
+		for _, ele := range recordsRs {
+			strExport = "INSERT INTO `" + tableName + "` ("//+strings.Join(allFields, ",")+") VALUES ("
+			var ks []string
+			var vs []string
+			for k, v := range ele {
+				ks = append(ks, k)
+				var elStr string
+				if len(v) == 0 {
+					elStr = "null"
+				}else{
+					elStr = "'" + escape(v) + "'"
+				}
+				vs = append(vs, elStr)
+			}
+			strExport += strings.Join(ks, ",") + ") VALUES (" + strings.Join(vs, ",") + ");\n"
+			writeToFile(fileName, strExport, true)
+		}
 	}
 }
 
