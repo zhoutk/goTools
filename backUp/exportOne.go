@@ -18,13 +18,13 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		fileName = workDir + fields.FileAlias + "-" + time.Now().Format("2006-01-02") + ".sql"
 	}
 
-	content := "/*   Mysql export" +
-		"\n		Host: " + fields.DbHost +
-		"\n		Port: " + strconv.Itoa(fields.DbPort) +
-		"\n		DataBase: " + fields.DbName +
-		"\n		Date: " + time.Now().Format("2006-01-02 15:04:05") +
-		"\n		Author: zhoutk@189.cn" +
-		"\n		Copyright: tlwl-2018" +
+	content := "/*   Mysql export \n" +
+		"\n		 Host: " + fields.DbHost +
+		"\n		 Port: " + strconv.Itoa(fields.DbPort) +
+		"\n		 DataBase: " + fields.DbName +
+		"\n		 Date: " + time.Now().Format("2006-01-02 15:04:05") +
+		"\n\n		 Author: zhoutk@189.cn" +
+		"\n		 Copyright: tlwl-2018" +
 		"\n*/\n\n"
 	writeToFile(fileName, content, false)
 	writeToFile(fileName, "SET FOREIGN_KEY_CHECKS=0;\n\n", true)
@@ -140,7 +140,7 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 				}
 				var cstr string
 				if len(colAl["COLUMN_COMMENT"]) > 0 {
-					cstr = " COMMENT '" + colAl["COLUMN_COMMENT"] + "'"
+					cstr = " COMMENT '" + escape(colAl["COLUMN_COMMENT"]) + "'"
 				}
 				strExport += "  `" + colAl["COLUMN_NAME"] + "` " + colAl["COLUMN_TYPE"] + charSet + collation +
 					nullStr + defaultValue + space + cstr + ",\n"
@@ -215,4 +215,47 @@ func writeToFile(name string, content string, append bool)  {
 	if _, err := fileObj.WriteString(content); err == nil {
 		fmt.Println("Successful writing to the file.")
 	}
+}
+
+func escape(source string) string {
+	var j int
+	if len(source) == 0 {
+		return ""
+	}
+	tempStr := source[:]
+	desc := make([]byte, len(tempStr)*2)
+	for i := 0; i < len(tempStr); i++ {
+		flag := false
+		var escape byte
+		switch tempStr[i] {
+		case '\r':
+			flag = true
+			escape = '\r'
+		case '\n':
+			flag = true
+			escape = '\n'
+		case '\\':
+			flag = true
+			escape = '\\'
+		case '\'':
+			flag = true
+			escape = '\''
+		case '"':
+			flag = true
+			escape = '"'
+		case '\032':
+			flag = true
+			escape = 'Z'
+		default:
+		}
+		if flag {
+			desc[j] = '\\'
+			desc[j+1] = escape
+			j = j + 2
+		} else {
+			desc[j] = tempStr[i]
+			j = j + 1
+		}
+	}
+	return string(desc[0:j])
 }
