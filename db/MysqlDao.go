@@ -44,7 +44,7 @@ func ExecuteWithDbConn(sql string, values []interface{}, fields common.DbConnFie
 
 		for i, col := range vs {
 			if col != nil {
-				each[columns[i]] = string(col)
+				each[columns[i]] = FilterHolder(string(col))
 			}else{
 				each[columns[i]] = nil
 			}
