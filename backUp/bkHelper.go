@@ -70,7 +70,7 @@ func writeToFile(name string, content string, append bool)  {
 	}
 	defer fileObj.Close()
 	if _, err := fileObj.WriteString(content); err == nil {
-		fmt.Println("Successful writing to the file.")
+		fmt.Print(".")
 	}
 }
 

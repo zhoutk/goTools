@@ -16,7 +16,7 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 	}else{
 		fileName = workDir + fields.FileAlias + "-" + time.Now().Format("2006-01-02") + ".sql"
 	}
-
+	fmt.Print("Export ", fields.DbName , " start .")
 	content := "/*   Mysql export \n" +
 		"\n		 Host: " + fields.DbHost +
 		"\n		 Port: " + strconv.Itoa(fields.DbPort) +
@@ -242,7 +242,24 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		writeToFile(fileName, sqlStr, true)
 	}
 
+	sqlStr = "select name,type,param_list,returns,body from mysql.proc where db = ? "
+	values = make([]interface{}, 0)
+	values = append(values, fields.DbName)
 
+	rs, err = db.ExecuteWithDbConn(sqlStr, values, fields)
+	fRs := rs["rows"].([]map[string]interface{})
 
-	fmt.Print(rely)
+	for _, cstAl := range fRs {
+		var rets string
+		if cstAl["returns"] != nil {
+			rets = " RETURNS " + cstAl["returns"].(string)
+		}
+		sqlStr = "DROP PROCEDURE IF EXISTS `" + cstAl["name"].(string) + "`;\nDELIMITER ;;\n" +
+			"CREATE DEFINER=`root`@`%` " + cstAl["type"].(string) + " `" + cstAl["name"].(string) +
+			"`("+cstAl["param_list"].(string)+")" + rets + "\n" + cstAl["body"].(string) + "\n" +
+			";;\nDELIMITER ;\n\n"
+		writeToFile(fileName, sqlStr, true)
+	}
+
+	fmt.Print(" ok.")
 }
