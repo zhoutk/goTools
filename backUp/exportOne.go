@@ -218,6 +218,7 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 			strExport += strings.Join(ks, ",") + ") VALUES (" + strings.Join(vs, ",") + ");\n"
 			writeToFile(fileName, strExport, true)
 		}
+		writeToFile(fileName, "\n", true)
 	}
 }
 
