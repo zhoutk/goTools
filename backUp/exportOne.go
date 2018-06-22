@@ -1,7 +1,6 @@
 package backUp
 
 import (
-	"os"
 	"fmt"
 	"time"
 	"strconv"
@@ -220,65 +219,21 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		}
 		writeToFile(fileName, "\n", true)
 	}
-}
 
-func writeToFile(name string, content string, append bool)  {
-	var fileObj *os.File
-	var err error
-	if append{
-		fileObj, err = os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	}else{
-		fileObj, err = os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	//process views
+	sqlStr = "select TABLE_NAME, VIEW_DEFINITION from information_schema.VIEWS where TABLE_SCHEMA = ? "
+	values = make([]interface{}, 0)
+	values = append(values, fields.DbName)
+	rs, err = db.ExecuteWithDbConn(sqlStr, values, fields)
+	vRs := rs["rows"].([]map[string]interface{})
+	ps := make(map[string]string)
+	vName := make([]string, 0)
+	for _, v := range vRs {
+		ps[v["TABLE_NAME"].(string)] = v["VIEW_DEFINITION"].(string)
+		vName = append(vName, v["TABLE_NAME"].(string))
 	}
-	if err != nil {
-		fmt.Println("Failed to open the file", err.Error())
-		os.Exit(2)
-	}
-	defer fileObj.Close()
-	if _, err := fileObj.WriteString(content); err == nil {
-		fmt.Println("Successful writing to the file.")
-	}
-}
+	vName = processRely(ps, &vName)
+	rely := processRely(ps, &vName)
 
-func escape(source string) string {
-	var j int
-	if len(source) == 0 {
-		return ""
-	}
-	tempStr := source[:]
-	desc := make([]byte, len(tempStr)*2)
-	for i := 0; i < len(tempStr); i++ {
-		flag := false
-		var escape byte
-		switch tempStr[i] {
-		case '\r':
-			flag = true
-			escape = '\r'
-		case '\n':
-			flag = true
-			escape = '\n'
-		case '\\':
-			flag = true
-			escape = '\\'
-		case '\'':
-			flag = true
-			escape = '\''
-		case '"':
-			flag = true
-			escape = '"'
-		case '\032':
-			flag = true
-			escape = 'Z'
-		default:
-		}
-		if flag {
-			desc[j] = '\\'
-			desc[j+1] = escape
-			j = j + 2
-		} else {
-			desc[j] = tempStr[i]
-			j = j + 1
-		}
-	}
-	return string(desc[0:j])
+	fmt.Print(rely)
 }
