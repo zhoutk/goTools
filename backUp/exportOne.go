@@ -84,11 +84,23 @@ func ExportOne(fields common.DbConnFields, workDir string, ch chan <- string) {
 		tableName := tbAl["TABLE_NAME"].(string)
 		tableEngine := tbAl["ENGINE"].(string)
 		//tableRowFormat := tbAl["ROW_FORMAT"]
-		tableAutoIncrement := tbAl["AUTO_INCREMENT"].(string)
-		tableCollation := tbAl["TABLE_COLLATION"].(string)
+		var tableAutoIncrement string
+		if tbAl["AUTO_INCREMENT"] != nil {
+			tableAutoIncrement = tbAl["AUTO_INCREMENT"].(string)
+		}
+		var tableCollation string
+		if tbAl["TABLE_COLLATION"] != nil {
+			tableCollation = tbAl["TABLE_COLLATION"].(string)
+		}
 		tableCharset := strings.Split(tableCollation, "_")[0]
-		tableCreateOptions := tbAl["CREATE_OPTIONS"].(string)
-		tableComment := tbAl["TABLE_COMMENT"].(string)
+		var tableCreateOptions string
+		if tbAl["CREATE_OPTIONS"] != nil {
+			tableCreateOptions = tbAl["CREATE_OPTIONS"].(string)
+		}
+		var tableComment string
+		if tbAl["TABLE_COMMENT"] != nil {
+			tableComment = tbAl["TABLE_COMMENT"].(string)
+		}
 
 		strExport := "DROP TABLE IF EXISTS `" + tbAl["TABLE_NAME"].(string) + "`;\n"
 		strExport += "CREATE TABLE `" + tableName + "` (\n"
@@ -229,11 +241,11 @@ func ExportOne(fields common.DbConnFields, workDir string, ch chan <- string) {
 	ps := make(map[string]string)
 	vName := make([]string, 0)
 	for _, v := range vRs {
-		ps[v["TABLE_NAME"].(string)] = v["VIEW_DEFINITION"].(string)
-		vName = append(vName, v["TABLE_NAME"].(string))
+		ps["`" + v["TABLE_NAME"].(string) + "`"] = v["VIEW_DEFINITION"].(string)
+		vName = append(vName, "`" + v["TABLE_NAME"].(string) + "`")
 	}
-	vName = processRely(ps, &vName)
-	rely := processRely(ps, &vName)
+	rely1 := processRely(ps, &vName)
+	rely := processRely(ps, &rely1)
 
 	for _, al := range rely {
 		viewStr := strings.Replace(ps[al], "`" + fields.DbName + "`.", "", -1)
