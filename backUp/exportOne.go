@@ -235,5 +235,14 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 	vName = processRely(ps, &vName)
 	rely := processRely(ps, &vName)
 
+	for _, al := range rely {
+		viewStr := strings.Replace(ps[al], "`" + fields.DbName + "`.", "", -1)
+		sqlStr = "DROP VIEW IF EXISTS " + al + ";\n" + "CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` " +
+			" SQL SECURITY DEFINER VIEW " + al + " AS " + viewStr + ";\n\n"
+		writeToFile(fileName, sqlStr, true)
+	}
+
+
+
 	fmt.Print(rely)
 }
