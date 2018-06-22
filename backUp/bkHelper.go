@@ -69,8 +69,8 @@ func writeToFile(name string, content string, append bool)  {
 		os.Exit(2)
 	}
 	defer fileObj.Close()
-	if _, err := fileObj.WriteString(content); err == nil {
-		fmt.Print(".")
+	if _, err := fileObj.WriteString(content); err != nil {
+		fmt.Println(err)
 	}
 }
 

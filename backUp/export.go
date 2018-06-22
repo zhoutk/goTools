@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"../common"
+	"fmt"
 )
 
 func Export() (error) {
@@ -20,6 +21,7 @@ func Export() (error) {
 	}
 	confs := configs.(map[string]interface{})
 	workDir := confs["workDir"].(string)
+	ch := make(chan string)
 	for key, value := range confs {
 		if strings.HasPrefix(key, "db_") {
 			dbConf := value.(map[string]interface{})
@@ -34,7 +36,12 @@ func Export() (error) {
 			if dbConf["file_alias"] != nil {
 				dbConn.FileAlias = dbConf["file_alias"].(string)
 			}
-			ExportOne(dbConn, workDir)
+			go ExportOne(dbConn, workDir, ch)
+		}
+	}
+	for key := range confs {
+		if strings.HasPrefix(key, "db_") {
+			fmt.Print( <- ch )
 		}
 	}
 	return nil

@@ -9,14 +9,14 @@ import (
 	"strings"
 )
 
-func ExportOne(fields common.DbConnFields, workDir string) {
+func ExportOne(fields common.DbConnFields, workDir string, ch chan <- string) {
 	var fileName string
 	if fields.FileAlias == "" {
 		fileName = workDir + fields.DbName + "-" + time.Now().Format("2006-01-02") + ".sql"
 	}else{
 		fileName = workDir + fields.FileAlias + "-" + time.Now().Format("2006-01-02") + ".sql"
 	}
-	fmt.Print("Export ", fields.DbName , " start .")
+	fmt.Println("Export ", fields.DbName , "\t start at \t", time.Now().Format("2006-01-02 15:04:05"))
 	content := "/*   Mysql export \n" +
 		"\n		 Host: " + fields.DbHost +
 		"\n		 Port: " + strconv.Itoa(fields.DbPort) +
@@ -251,7 +251,7 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 
 	for _, cstAl := range fRs {
 		var rets string
-		if cstAl["returns"] != nil {
+		if cstAl["returns"] != nil && len(cstAl["returns"].(string)) > 0 {
 			rets = " RETURNS " + cstAl["returns"].(string)
 		}
 		sqlStr = "DROP PROCEDURE IF EXISTS `" + cstAl["name"].(string) + "`;\nDELIMITER ;;\n" +
@@ -261,5 +261,5 @@ func ExportOne(fields common.DbConnFields, workDir string) {
 		writeToFile(fileName, sqlStr, true)
 	}
 
-	fmt.Print(" ok.")
+	ch <- fmt.Sprintln("Export ", fields.DbName , "\t success at \t", time.Now().Format("2006-01-02 15:04:05"))
 }
