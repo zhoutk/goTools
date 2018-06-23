@@ -10,7 +10,7 @@ import (
 	"../db"
 )
 
-func exportTables(fileName string, fields common.DbConnFields) error {
+func exportTables(fileName string, fields common.DbConnFields, flag common.OpFlag) error {
 	sqlStr := "select CONSTRAINT_NAME,TABLE_NAME,COLUMN_NAME,REFERENCED_TABLE_SCHEMA," +
 		"REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME from information_schema.`KEY_COLUMN_USAGE` " +
 		"where REFERENCED_TABLE_SCHEMA = ? "
@@ -193,9 +193,11 @@ func exportTables(fileName string, fields common.DbConnFields) error {
 
 		writeToFile(fileName, strExport, true) //表结构导出
 
-		err = exportTableData(fileName, fields, tableName, allFields)
-		if err != nil {
-			return err
+		if flag.Datum {
+			err = exportTableData(fileName, fields, tableName, allFields)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

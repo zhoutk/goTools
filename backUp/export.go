@@ -8,7 +8,7 @@ import (
 	"fmt"
 )
 
-func Export() (error) {
+func Export(flag common.OpFlag) (error) {
 	var configs interface{}
 	fr, err := os.Open("./configs.json")
 	if err != nil {
@@ -36,7 +36,7 @@ func Export() (error) {
 			if dbConf["file_alias"] != nil {
 				dbConn.FileAlias = dbConf["file_alias"].(string)
 			}
-			go ExportOne(dbConn, workDir, ch)
+			go ExportOne(dbConn, workDir, ch, flag)
 		}
 	}
 	for key := range confs {
