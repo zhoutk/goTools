@@ -3,7 +3,7 @@ create some tools use go lang.
 
 # characteristic
 - can export table, data, views, funcs.
-- multi grountinue to export many database.
+- multi grountinue to export many database together.
 - filter \xfffd.
 - solve the dependence of views.
 - can recieve a cli arg, which must be in table, data, views & funcs, to export single content.
