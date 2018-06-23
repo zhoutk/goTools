@@ -4,7 +4,69 @@ import (
 	"os"
 	"fmt"
 	"strings"
+	"strconv"
+	"time"
+	"../common"
+	"../db"
 )
+
+func exportFuncs(fileName string, fields common.DbConnFields) error {
+	sqlStr := "select name,type,param_list,returns,body from mysql.proc where db = ? "
+	values := make([]interface{}, 0)
+	values = append(values, fields.DbName)
+
+	rs, err := db.ExecuteWithDbConn(sqlStr, values, fields)
+	fRs := rs["rows"].([]map[string]interface{})
+
+	for _, cstAl := range fRs {
+		var rets string
+		if cstAl["returns"] != nil && len(cstAl["returns"].(string)) > 0 {
+			rets = " RETURNS " + cstAl["returns"].(string)
+		}
+		sqlStr = "DROP PROCEDURE IF EXISTS `" + cstAl["name"].(string) + "`;\nDELIMITER ;;\n" +
+			"CREATE DEFINER=`root`@`%` " + cstAl["type"].(string) + " `" + cstAl["name"].(string) +
+			"`(" + cstAl["param_list"].(string) + ")" + rets + "\n" + cstAl["body"].(string) + "\n" +
+			";;\nDELIMITER ;\n\n"
+		writeToFile(fileName, sqlStr, true)
+	}
+	return err
+}
+
+func exportViews(fileName string, fields common.DbConnFields) error {
+	sqlStr := "select TABLE_NAME, VIEW_DEFINITION from information_schema.VIEWS where TABLE_SCHEMA = ? "
+	values := make([]interface{}, 0)
+	values = append(values, fields.DbName)
+	rs, err := db.ExecuteWithDbConn(sqlStr, values, fields)
+	vRs := rs["rows"].([]map[string]interface{})
+	ps := make(map[string]string)
+	vName := make([]string, 0)
+	for _, v := range vRs {
+		ps["`"+v["TABLE_NAME"].(string)+"`"] = v["VIEW_DEFINITION"].(string)
+		vName = append(vName, "`"+v["TABLE_NAME"].(string)+"`")
+	}
+	rely1 := processRely(ps, &vName)
+	rely := processRely(ps, &rely1)
+	for _, al := range rely {
+		viewStr := strings.Replace(ps[al], "`"+fields.DbName+"`.", "", -1)
+		sqlStr = "DROP VIEW IF EXISTS " + al + ";\n" + "CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` " +
+			" SQL SECURITY DEFINER VIEW " + al + " AS " + viewStr + ";\n\n"
+		writeToFile(fileName, sqlStr, true)
+	}
+	return err
+}
+
+func setSqlHeader(fields common.DbConnFields, fileName string) {
+	content := "/*   Mysql export \n" +
+		"\n		 Host: " + fields.DbHost +
+		"\n		 Port: " + strconv.Itoa(fields.DbPort) +
+		"\n		 DataBase: " + fields.DbName +
+		"\n		 Date: " + time.Now().Format("2006-01-02 15:04:05") +
+		"\n\n		 Author: zhoutk@189.cn" +
+		"\n		 Copyright: tlwl-2018" +
+		"\n*/\n\n"
+	writeToFile(fileName, content, false)
+	writeToFile(fileName, "SET FOREIGN_KEY_CHECKS=0;\n\n", true)
+}
 
 func processRely(params map[string]string, relyOld *[]string) []string {
 	rely := make([]string, 0)

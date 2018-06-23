@@ -3,7 +3,6 @@ package backUp
 import (
 	"fmt"
 	"time"
-	"strconv"
 	"../common"
 	"../db"
 	"strings"
@@ -17,23 +16,14 @@ func ExportOne(fields common.DbConnFields, workDir string, ch chan <- string) {
 		fileName = workDir + fields.FileAlias + "-" + time.Now().Format("2006-01-02") + ".sql"
 	}
 	fmt.Println("Export ", fields.DbName , "\t start at \t", time.Now().Format("2006-01-02 15:04:05"))
-	content := "/*   Mysql export \n" +
-		"\n		 Host: " + fields.DbHost +
-		"\n		 Port: " + strconv.Itoa(fields.DbPort) +
-		"\n		 DataBase: " + fields.DbName +
-		"\n		 Date: " + time.Now().Format("2006-01-02 15:04:05") +
-		"\n\n		 Author: zhoutk@189.cn" +
-		"\n		 Copyright: tlwl-2018" +
-		"\n*/\n\n"
-	writeToFile(fileName, content, false)
-	writeToFile(fileName, "SET FOREIGN_KEY_CHECKS=0;\n\n", true)
+	setSqlHeader(fields, fileName)
 	sqlStr := "select CONSTRAINT_NAME,TABLE_NAME,COLUMN_NAME,REFERENCED_TABLE_SCHEMA," +
 		"REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME from information_schema.`KEY_COLUMN_USAGE` " +
 		"where REFERENCED_TABLE_SCHEMA = ? "
 	var values []interface{}
 	values = append(values, fields.DbName)
 	rs, err := db.ExecuteWithDbConn(sqlStr, values, fields)
-	if err != nil{
+	if err != nil {
 		fmt.Print(err)
 		return
 	}
@@ -60,25 +50,25 @@ func ExportOne(fields common.DbConnFields, workDir string, ch chan <- string) {
 	values = make([]interface{}, 0)
 	values = append(values, fields.DbName, "BASE TABLE")
 	rs, err = db.ExecuteWithDbConn(sqlStr, values, fields)
-	if err != nil{
+	if err != nil {
 		fmt.Print(err)
 		return
 	}
 	tbRs := rs["rows"].([]map[string]interface{})
-	for _, tbAl := range tbRs{
+	for _, tbAl := range tbRs {
 		sqlStr = "SELECT	`COLUMNS`.COLUMN_NAME,`COLUMNS`.COLUMN_TYPE,`COLUMNS`.IS_NULLABLE," +
-					"`COLUMNS`.CHARACTER_SET_NAME,`COLUMNS`.COLUMN_DEFAULT,`COLUMNS`.EXTRA," +
-                    "`COLUMNS`.COLUMN_KEY,`COLUMNS`.COLUMN_COMMENT,`STATISTICS`.TABLE_NAME," +
-                    "`STATISTICS`.INDEX_NAME,`STATISTICS`.SEQ_IN_INDEX,`STATISTICS`.NON_UNIQUE," +
-                    "`COLUMNS`.COLLATION_NAME " +
-                    "FROM information_schema.`COLUMNS` " +
-                    "LEFT JOIN information_schema.`STATISTICS` ON " +
-                    "information_schema.`COLUMNS`.TABLE_NAME = `STATISTICS`.TABLE_NAME " +
-                    "AND information_schema.`COLUMNS`.COLUMN_NAME = information_schema.`STATISTICS`.COLUMN_NAME " +
-                    "AND information_schema.`STATISTICS`.table_schema = ? " +
-                    "where information_schema.`COLUMNS`.TABLE_NAME = ? and `COLUMNS`.table_schema = ?"
+			"`COLUMNS`.CHARACTER_SET_NAME,`COLUMNS`.COLUMN_DEFAULT,`COLUMNS`.EXTRA," +
+			"`COLUMNS`.COLUMN_KEY,`COLUMNS`.COLUMN_COMMENT,`STATISTICS`.TABLE_NAME," +
+			"`STATISTICS`.INDEX_NAME,`STATISTICS`.SEQ_IN_INDEX,`STATISTICS`.NON_UNIQUE," +
+			"`COLUMNS`.COLLATION_NAME " +
+			"FROM information_schema.`COLUMNS` " +
+			"LEFT JOIN information_schema.`STATISTICS` ON " +
+			"information_schema.`COLUMNS`.TABLE_NAME = `STATISTICS`.TABLE_NAME " +
+			"AND information_schema.`COLUMNS`.COLUMN_NAME = information_schema.`STATISTICS`.COLUMN_NAME " +
+			"AND information_schema.`STATISTICS`.table_schema = ? " +
+			"where information_schema.`COLUMNS`.TABLE_NAME = ? and `COLUMNS`.table_schema = ?"
 		values = make([]interface{}, 0)
-		values = append(values, fields.DbName, tbAl["TABLE_NAME"],fields.DbName)
+		values = append(values, fields.DbName, tbAl["TABLE_NAME"], fields.DbName)
 		rs, err = db.ExecuteWithDbConn(sqlStr, values, fields)
 		colRs := rs["rows"].([]map[string]interface{})
 		tableName := tbAl["TABLE_NAME"].(string)
@@ -111,14 +101,14 @@ func ExportOne(fields common.DbConnFields, workDir string, ch chan <- string) {
 		theTableColSet := make(map[string]int)
 		var allFields []string
 		var defaultValue string
-		for _, colAl := range colRs{
+		for _, colAl := range colRs {
 			if _, ok := theTableColSet[colAl["COLUMN_NAME"].(string)]; !ok {
 				theTableColSet[colAl["COLUMN_NAME"].(string)] = 1
 				allFields = append(allFields, colAl["COLUMN_NAME"].(string))
-				if colAl["COLUMN_DEFAULT"] != nil && len(colAl["COLUMN_DEFAULT"].(string)) > 0{
-					if colAl["COLUMN_DEFAULT"] == "CURRENT_TIMESTAMP"{
+				if colAl["COLUMN_DEFAULT"] != nil && len(colAl["COLUMN_DEFAULT"].(string)) > 0 {
+					if colAl["COLUMN_DEFAULT"] == "CURRENT_TIMESTAMP" {
 						defaultValue = colAl["COLUMN_DEFAULT"].(string)
-					}else{
+					} else {
 						defaultValue = "'" + colAl["COLUMN_DEFAULT"].(string) + "'"
 					}
 				}
@@ -136,17 +126,17 @@ func ExportOne(fields common.DbConnFields, workDir string, ch chan <- string) {
 				}
 				if colAl["COLUMN_DEFAULT"] != nil && len(colAl["COLUMN_DEFAULT"].(string)) > 0 {
 					defaultValue = " DEFAULT " + defaultValue
-				}else{
-					if colAl["IS_NULLABLE"] != nil && colAl["IS_NULLABLE"] == "NO"{
+				} else {
+					if colAl["IS_NULLABLE"] != nil && colAl["IS_NULLABLE"] == "NO" {
 						defaultValue = ""
-					}else{
+					} else {
 						defaultValue = " DEFAULT NULL"
 					}
 				}
 				var space string
 				if colAl["EXTRA"] != nil && len(colAl["EXTRA"].(string)) > 0 {
 					space = " " + colAl["EXTRA"].(string)
-				}else{
+				} else {
 					space = ""
 				}
 				var cstr string
@@ -158,17 +148,17 @@ func ExportOne(fields common.DbConnFields, workDir string, ch chan <- string) {
 			}
 			if colAl["INDEX_NAME"] != nil && colAl["INDEX_NAME"].(string) == "PRIMARY" {
 				if _, ok := priKey[colAl["INDEX_NAME"].(string)]; !ok {
-					priKey[colAl["INDEX_NAME"].(string)] = make([]string,0)
+					priKey[colAl["INDEX_NAME"].(string)] = make([]string, 0)
 				}
 				priKey[colAl["INDEX_NAME"].(string)] = append(priKey[colAl["INDEX_NAME"].(string)].([]string), colAl["COLUMN_NAME"].(string))
-			}else if colAl["INDEX_NAME"] != nil && colAl["NON_UNIQUE"] == "0" {
+			} else if colAl["INDEX_NAME"] != nil && colAl["NON_UNIQUE"] == "0" {
 				if _, ok := colKey[colAl["INDEX_NAME"].(string)]; !ok {
-					colKey[colAl["INDEX_NAME"].(string)] = make([]string,0)
+					colKey[colAl["INDEX_NAME"].(string)] = make([]string, 0)
 				}
 				colKey[colAl["INDEX_NAME"].(string)] = append(colKey[colAl["INDEX_NAME"].(string)].([]string), colAl["COLUMN_NAME"].(string))
-			}else if colAl["INDEX_NAME"] != nil && colAl["NON_UNIQUE"] == "1" {
+			} else if colAl["INDEX_NAME"] != nil && colAl["NON_UNIQUE"] == "1" {
 				if _, ok := mulKey[colAl["INDEX_NAME"].(string)]; !ok {
-					mulKey[colAl["INDEX_NAME"].(string)] = make([]string,0)
+					mulKey[colAl["INDEX_NAME"].(string)] = make([]string, 0)
 				}
 				mulKey[colAl["INDEX_NAME"].(string)] = append(mulKey[colAl["INDEX_NAME"].(string)].([]string), colAl["COLUMN_NAME"].(string))
 			}
@@ -177,10 +167,10 @@ func ExportOne(fields common.DbConnFields, workDir string, ch chan <- string) {
 			strExport += "  PRIMARY KEY (`" + strings.Join(v.([]string), "`,`") + "`),\n"
 		}
 		for k, v := range colKey {
-			strExport += "  UNIQUE KEY `"+k+"` (`" + strings.Join(v.([]string), "`,`") + "`),\n"
+			strExport += "  UNIQUE KEY `" + k + "` (`" + strings.Join(v.([]string), "`,`") + "`),\n"
 		}
 		for k, v := range mulKey {
-			strExport += "  KEY `"+k+"` (`" + strings.Join(v.([]string), "`,`") + "`),\n"
+			strExport += "  KEY `" + k + "` (`" + strings.Join(v.([]string), "`,`") + "`),\n"
 		}
 
 		for k, v := range FKEYS {
@@ -206,14 +196,14 @@ func ExportOne(fields common.DbConnFields, workDir string, ch chan <- string) {
 		strExport += "\n) ENGINE=" + tableEngine + incr + " DEFAULT CHARSET=" +
 			tableCharset + colla + " " + tableCreateOptions + " COMMENT='" + tableComment + "';\n\n"
 
-		writeToFile(fileName, strExport, true)			//表结构导出
+		writeToFile(fileName, strExport, true) //表结构导出
 
 		//表中数据导出
 		sqlStr = "select " + strings.Join(allFields, ",") + " from " + tableName
 		rs, err = db.ExecuteWithDbConn(sqlStr, make([]interface{}, 0), fields)
 		recordsRs := rs["rows"].([]map[string]interface{})
 		for _, ele := range recordsRs {
-			strExport = "INSERT INTO `" + tableName + "` ("//+strings.Join(allFields, ",")+") VALUES ("
+			strExport = "INSERT INTO `" + tableName + "` (" //+strings.Join(allFields, ",")+") VALUES ("
 			var ks []string
 			var vs []string
 			for k, v := range ele {
@@ -221,7 +211,7 @@ func ExportOne(fields common.DbConnFields, workDir string, ch chan <- string) {
 				elStr := "''"
 				if v == nil {
 					elStr = "null"
-				}else if len(v.(string)) > 0 {
+				} else if len(v.(string)) > 0 {
 					elStr = "'" + escape(v.(string)) + "'"
 				}
 				vs = append(vs, elStr)
@@ -232,46 +222,17 @@ func ExportOne(fields common.DbConnFields, workDir string, ch chan <- string) {
 		writeToFile(fileName, "\n", true)
 	}
 
-	//process views
-	sqlStr = "select TABLE_NAME, VIEW_DEFINITION from information_schema.VIEWS where TABLE_SCHEMA = ? "
-	values = make([]interface{}, 0)
-	values = append(values, fields.DbName)
-	rs, err = db.ExecuteWithDbConn(sqlStr, values, fields)
-	vRs := rs["rows"].([]map[string]interface{})
-	ps := make(map[string]string)
-	vName := make([]string, 0)
-	for _, v := range vRs {
-		ps["`" + v["TABLE_NAME"].(string) + "`"] = v["VIEW_DEFINITION"].(string)
-		vName = append(vName, "`" + v["TABLE_NAME"].(string) + "`")
-	}
-	rely1 := processRely(ps, &vName)
-	rely := processRely(ps, &rely1)
-
-	for _, al := range rely {
-		viewStr := strings.Replace(ps[al], "`" + fields.DbName + "`.", "", -1)
-		sqlStr = "DROP VIEW IF EXISTS " + al + ";\n" + "CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` " +
-			" SQL SECURITY DEFINER VIEW " + al + " AS " + viewStr + ";\n\n"
-		writeToFile(fileName, sqlStr, true)
+	err = exportViews(fileName, fields)
+	if err != nil {
+		ch <- fmt.Sprintln("Error: ", fields.DbName, "\t export views throw, \t", err)
+		return
 	}
 
-	sqlStr = "select name,type,param_list,returns,body from mysql.proc where db = ? "
-	values = make([]interface{}, 0)
-	values = append(values, fields.DbName)
-
-	rs, err = db.ExecuteWithDbConn(sqlStr, values, fields)
-	fRs := rs["rows"].([]map[string]interface{})
-
-	for _, cstAl := range fRs {
-		var rets string
-		if cstAl["returns"] != nil && len(cstAl["returns"].(string)) > 0 {
-			rets = " RETURNS " + cstAl["returns"].(string)
-		}
-		sqlStr = "DROP PROCEDURE IF EXISTS `" + cstAl["name"].(string) + "`;\nDELIMITER ;;\n" +
-			"CREATE DEFINER=`root`@`%` " + cstAl["type"].(string) + " `" + cstAl["name"].(string) +
-			"`("+cstAl["param_list"].(string)+")" + rets + "\n" + cstAl["body"].(string) + "\n" +
-			";;\nDELIMITER ;\n\n"
-		writeToFile(fileName, sqlStr, true)
+	err = exportFuncs(fileName, fields)
+	if err != nil {
+		ch <- fmt.Sprintln("Error: ", fields.DbName, "\t export funcs throw, \t", err)
+		return
 	}
 
-	ch <- fmt.Sprintln("Export ", fields.DbName , "\t success at \t", time.Now().Format("2006-01-02 15:04:05"))
+	ch <- fmt.Sprintln("Export ", fields.DbName, "\t success at \t", time.Now().Format("2006-01-02 15:04:05"))
 }
