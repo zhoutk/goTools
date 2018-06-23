@@ -14,6 +14,7 @@ func ExportOne(fields common.DbConnFields, workDir string, ch chan <- string) {
 		fileName = workDir + fields.FileAlias + "-" + time.Now().Format("2006-01-02") + ".sql"
 	}
 	fmt.Println("Export ", fields.DbName , "\t start at \t", time.Now().Format("2006-01-02 15:04:05"))
+
 	setSqlHeader(fields, fileName)
 
 	err := exportTables(fileName, fields)

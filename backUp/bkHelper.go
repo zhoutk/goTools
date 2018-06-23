@@ -193,32 +193,39 @@ func exportTables(fileName string, fields common.DbConnFields) error {
 
 		writeToFile(fileName, strExport, true) //表结构导出
 
-		//表中数据导出
-		sqlStr = "select " + strings.Join(allFields, ",") + " from " + tableName
-		rs, err = db.ExecuteWithDbConn(sqlStr, make([]interface{}, 0), fields)
+		err = exportTableData(fileName, fields, tableName, allFields)
 		if err != nil {
 			return err
 		}
-		recordsRs := rs["rows"].([]map[string]interface{})
-		for _, ele := range recordsRs {
-			strExport = "INSERT INTO `" + tableName + "` (" //+strings.Join(allFields, ",")+") VALUES ("
-			var ks []string
-			var vs []string
-			for k, v := range ele {
-				ks = append(ks, k)
-				elStr := "''"
-				if v == nil {
-					elStr = "null"
-				} else if len(v.(string)) > 0 {
-					elStr = "'" + escape(v.(string)) + "'"
-				}
-				vs = append(vs, elStr)
-			}
-			strExport += strings.Join(ks, ",") + ") VALUES (" + strings.Join(vs, ",") + ");\n"
-			writeToFile(fileName, strExport, true)
-		}
-		writeToFile(fileName, "\n", true)
 	}
+	return nil
+}
+
+func exportTableData(fileName string, fields common.DbConnFields, tableName string, allFields []string) error {
+	sqlStr := "select " + strings.Join(allFields, ",") + " from " + tableName
+	rs, err := db.ExecuteWithDbConn(sqlStr, make([]interface{}, 0), fields)
+	if err != nil {
+		return err
+	}
+	recordsRs := rs["rows"].([]map[string]interface{})
+	for _, ele := range recordsRs {
+		strExport := "INSERT INTO `" + tableName + "` (" //+strings.Join(allFields, ",")+") VALUES ("
+		var ks []string
+		var vs []string
+		for k, v := range ele {
+			ks = append(ks, k)
+			elStr := "''"
+			if v == nil {
+				elStr = "null"
+			} else if len(v.(string)) > 0 {
+				elStr = "'" + escape(v.(string)) + "'"
+			}
+			vs = append(vs, elStr)
+		}
+		strExport += strings.Join(ks, ",") + ") VALUES (" + strings.Join(vs, ",") + ");\n"
+		writeToFile(fileName, strExport, true)
+	}
+	writeToFile(fileName, "\n", true)
 	return nil
 }
 
