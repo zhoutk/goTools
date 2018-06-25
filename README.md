@@ -34,6 +34,8 @@ you must create configs.json as:
     "workDir": "/home/zhoutk/gocodes/goTools/"
 }
 ```
+
+```
 # Instructions
 git clone https://github.com/zhoutk/goTools
 cd goTools
@@ -46,3 +48,4 @@ go buid main.go
 ./main data             #export tables & data
 ./main views            #export views
 ./main funcs            #export funcs & stored procedures
+```
