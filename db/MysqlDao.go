@@ -9,6 +9,14 @@ import (
 	"../common"
 )
 
+func TestDbConn(fields common.DbConnFields) error {
+	dao, err := mysql.Open("mysql", fields.DbUser + ":"+fields.DbPass+"@tcp("+fields.DbHost+":"+
+		strconv.Itoa(fields.DbPort)+")/"+fields.DbName+"?charset="+fields.DbCharset)
+	defer dao.Close()
+	_, err = dao.Prepare("select * from mysql.db ")
+	return err
+}
+
 func ExecuteWithDbConn(sql string, values []interface{}, fields common.DbConnFields) (map[string]interface{}, error)  {
 	rs := make(map[string]interface{})
 	dao, err := mysql.Open("mysql", fields.DbUser + ":"+fields.DbPass+"@tcp("+fields.DbHost+":"+

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 	"../common"
+	"../db"
 )
 
 func ExportOne(fields common.DbConnFields, workDir string, ch chan <- string, flag common.OpFlag) {
@@ -14,6 +15,11 @@ func ExportOne(fields common.DbConnFields, workDir string, ch chan <- string, fl
 		fileName = workDir + fields.FileAlias + "-" + time.Now().Format("2006-01-02") + ".sql"
 	}
 	fmt.Println("Export ", fields.DbName , "\t start at \t", time.Now().Format("2006-01-02 15:04:05"))
+
+	if err := db.TestDbConn(fields); err != nil {
+		ch <- fmt.Sprintln("Error: ", fields.DbName, "\t test db connect throw, \t", err)
+		return
+	}
 
 	setSqlHeader(fields, fileName)
 
