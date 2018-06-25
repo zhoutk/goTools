@@ -34,9 +34,8 @@ you must create configs.json as:
     "workDir": "/home/zhoutk/gocodes/goTools/"
 }
 ```
-
-```
 # Instructions
+```
 git clone https://github.com/zhoutk/goTools
 cd goTools
 go get
