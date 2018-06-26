@@ -70,7 +70,7 @@ func main() {
 	}
 	vss = vss[0:len(vss) -1]
 	//vs = append(vs, "ssss")
-	db, err := sql.Open("mysql", "root:znhl2017UP@tcp(tlwl2020.mysql.rds.aliyuncs.com:3686)/policy?charset=utf8")
+	db, err := sql.Open("mysql", "")
 	sqlstr := "insert into questions2 (name, answer_json) values " + vss
 	defer db.Close()
 	fmt.Printf("%s\n", sqlstr)

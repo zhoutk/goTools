@@ -62,7 +62,7 @@ func FilterEmoji(content string) string {
 }
 
 func main() {
-	db, err := sql.Open("mysql", "root:znhl2017UP@tcp(tlwl2020.mysql.rds.aliyuncs.com:3686)/fbox?charset=utf8mb4")
+	db, err := sql.Open("mysql", "")
 	if err != nil {
 		panic(err.Error())
 	}
