@@ -1,35 +1,28 @@
 package main
 
 import (
-	"log"
-	"net/http"
-	"io/ioutil"
 	"regexp"
+	"./common"
 	"./ipSpider"
 	"fmt"
 )
 
 func main()  {
-	res, err := http.Get("http://ips.chacuo.net/")
-	if err != nil {
-		log.Fatal(err)
-	}
-	robots, err := ioutil.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
+	ctx := common.HttpGet("http://ips.chacuo.net/")
 
 	reg := regexp.MustCompile(`<li><a title="[\S]+" href='([^']+?)'>([^<]+?)</a></li>`)
-	ss := reg.FindAllStringSubmatch(string(robots), -1)
+	ips := reg.FindAllStringSubmatch(string(ctx), -1)
 
 	ch := make(chan string)
 
-	for _, el := range ss {
+	for _, el := range ips {
 		go ipSpider.SpiderOnPage(el[1], el[2], ch)
+		break
 	}
 
-	for range ss {
-		fmt.Println( <- ch )
+	for range ips {
+		fmt.Println(<-ch)
+		break
 	}
 }
+
