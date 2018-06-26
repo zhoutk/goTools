@@ -8,7 +8,7 @@ import (
 )
 
 func main()  {
-	ctx := common.HttpGet("http://ips.chacuo.net/")
+	ctx := common.HttpGet("http://ipcn.chacuo.net/")
 
 	reg := regexp.MustCompile(`<li><a title="[\S]+" href='([^']+?)'>([^<]+?)</a></li>`)
 	ips := reg.FindAllStringSubmatch(string(ctx), -1)

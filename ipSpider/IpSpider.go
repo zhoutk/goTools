@@ -17,6 +17,11 @@ func SpiderOnPage(url string, province string, ch chan <- string) error {
 	//<dd><span class="v_l">49.64.0.0</span><span class="v_r">49.95.255.255</span><div class="clearfix"></div></dd>
 	ip := reg.FindAllStringSubmatch(string(ctx), -1)
 
+	if len(ip) == 0 {
+		ch <- "There are no data exist."
+		return nil
+	}
+
 	var vs [] interface{}
 	var vss string
 	for _, el := range ip {
@@ -50,7 +55,8 @@ func SpiderOnPage(url string, province string, ch chan <- string) error {
 		ch <- err.Error()
 		return err
 	}
-	sqlstr := "insert into ip_addr_info (ip_addr,ip_mask,province) values " + vss
+	sqlstr := "insert into ip_addr_info (ip_addr,ip_mask,ip_comp) values " + vss +
+		" ON DUPLICATE KEY UPDATE ip_addr = values(ip_addr), ip_mask = values(ip_mask), ip_comp = values(ip_comp)"
 	stmt, err := dao.Prepare(sqlstr)
 	rs, err := stmt.Exec(vs...)
 	if err != nil {
