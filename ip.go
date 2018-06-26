@@ -17,12 +17,10 @@ func main()  {
 
 	for _, el := range ips {
 		go ipSpider.SpiderOnPage(el[1], el[2], ch)
-		break
 	}
 
 	for range ips {
 		fmt.Println(<-ch)
-		break
 	}
 }
 
