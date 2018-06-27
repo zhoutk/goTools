@@ -99,7 +99,7 @@ func exportTables(fileName string, fields common.DbConnFields, flag common.OpFla
 		for _, colAl := range colRs {
 			if _, ok := theTableColSet[colAl["COLUMN_NAME"].(string)]; !ok {
 				theTableColSet[colAl["COLUMN_NAME"].(string)] = 1
-				allFields = append(allFields, colAl["COLUMN_NAME"].(string))
+				allFields = append(allFields, "`"+colAl["COLUMN_NAME"].(string)+"`")
 				if colAl["COLUMN_DEFAULT"] != nil && len(colAl["COLUMN_DEFAULT"].(string)) > 0 {
 					if colAl["COLUMN_DEFAULT"] == "CURRENT_TIMESTAMP" {
 						defaultValue = colAl["COLUMN_DEFAULT"].(string)
@@ -215,7 +215,7 @@ func exportTableData(fileName string, fields common.DbConnFields, tableName stri
 		var ks []string
 		var vs []string
 		for k, v := range ele {
-			ks = append(ks, k)
+			ks = append(ks, "`"+k+"`")
 			elStr := "''"
 			if v == nil {
 				elStr = "null"
