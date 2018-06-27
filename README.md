@@ -1,14 +1,16 @@
 # goTools
 create some tools use go lang.
 
-# characteristic
+# 1. mysql exporter
+
+## characteristic
 - can export table, data, views, funcs.
 - multi grountinue to export many database together.
 - filter \xfffd.
 - solve the dependence of views.
 - can recieve a cli arg, which must be in table, data, views & funcs, to export single content.
 
-# configs.json
+## configs.json
 you must create configs.json as:
 
 ```
@@ -34,7 +36,7 @@ you must create configs.json as:
     "workDir": "/home/zhoutk/gocodes/goTools/"
 }
 ```
-# Instructions
+## Instructions
 ```
 git clone https://github.com/zhoutk/goTools
 cd goTools
