@@ -1,16 +1,19 @@
 # goTools
-create some tools use go lang.
+> create some tools use go lang.
+1. mysql exporter
+2. ip spider
 
-# 1. mysql exporter
+## 1. mysql exporter
+a tool can export mysql's table,data,views,function & stored procedure together or independent.
 
-## characteristic
+### characteristic
 - can export table, data, views, funcs.
 - multi grountinue to export many database together.
 - filter \xfffd.
 - solve the dependence of views.
 - can recieve a cli arg, which must be in table, data, views & funcs, to export single content.
 
-## configs.json
+### configs.json
 you must create configs.json as:
 
 ```
@@ -36,7 +39,7 @@ you must create configs.json as:
     "workDir": "/home/zhoutk/gocodes/goTools/"
 }
 ```
-## Instructions
+### Instructions
 ```
 git clone https://github.com/zhoutk/goTools
 cd goTools
@@ -51,14 +54,15 @@ go buid main.go
 ./main funcs            #export funcs & stored procedures
 ```
 
-# 2. ip spider
+## 2. ip spider
+a tool can spider ip address info from appointed web page.
 
-## characteristic
+### characteristic
 - multi grountinue to spider web data.
 - write mysql batch.
 - update mysql batch.
 
-## sql scripts
+### sql scripts
 you can create table use it:
 
 ```
@@ -72,7 +76,7 @@ CREATE TABLE `ip_addr_info` (
   UNIQUE KEY `ip_addr` (`ip_addr_begin`,`ip_addr_end`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7268 DEFAULT CHARSET=utf8 COMMENT='表';
 ```
-## Instructions
+### Instructions
 ```
 git clone https://github.com/zhoutk/goTools
 cd goTools
