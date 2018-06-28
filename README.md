@@ -50,3 +50,36 @@ go buid main.go
 ./main views            #export views
 ./main funcs            #export funcs & stored procedures
 ```
+
+# 2. ip spider
+
+## characteristic
+- multi grountinue to spider web data.
+- write mysql batch.
+- update mysql batch.
+
+## sql scripts
+you can create table use it:
+
+```
+CREATE TABLE `ip_addr_info` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '索引，自动增长',
+  `ip_addr_begin` varchar(32) NOT NULL DEFAULT '' COMMENT 'ip地址段开始',
+  `ip_addr_end` varchar(32) DEFAULT '' COMMENT 'ip地址段结束',
+  `province` varchar(32) DEFAULT '' COMMENT '所属省',
+  `ip_comp` varchar(32) DEFAULT '' COMMENT '运营商',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ip_addr` (`ip_addr_begin`,`ip_addr_end`)
+) ENGINE=InnoDB AUTO_INCREMENT=7268 DEFAULT CHARSET=utf8 COMMENT='表';
+```
+## Instructions
+```
+git clone https://github.com/zhoutk/goTools
+cd goTools
+go get
+go run ip.go
+
+go buid ip.go
+./ip 
+```
+
