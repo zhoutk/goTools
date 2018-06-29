@@ -23,12 +23,15 @@ func main()  {
 		case "data":
 			flag.Tables = true
 			flag.Datum = true
+		case "view":
+			flag.Views = true
 		case "views":
 			flag.Views = true
-		case "funcs":
+			flag.Funcs = true
+		case "func":
 			flag.Funcs = true
 		default:
-			log.Fatal("You arg must be in : table, data, views or funcs.")
+			log.Fatal("You arg must be in : table, data, view(s) or func.")
 		}
 	}else{
 		flag = common.OpFlag{
