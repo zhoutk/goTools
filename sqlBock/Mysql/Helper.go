@@ -6,13 +6,45 @@ import (
 	"strconv"
 	mysql "database/sql"
 	_ "github.com/go-sql-driver/mysql"
+	"strings"
 )
 
-func Query(tablename string, params map[string]interface{}, fields []string, ps ...interface{}) (map[string]interface{}, error) {
-	return execute("select * from " + tablename, ps)
+func query(tablename string, params map[string]interface{}, fields []string, sql string, vaules []interface{}) map[string]interface{} {
+	if vaules == nil {
+		vaules = make([]interface{},0)
+	}
+	return execQeury("select "+ strings.Join(fields, ",")+" from " + tablename, vaules)
 }
 
-func execute(sql string, values []interface{}) (map[string]interface{}, error)  {
+func Query(tablename string, params map[string]interface{}, fields []string ) map[string]interface{} {
+	return query(tablename, params, fields, "", nil)
+}
+
+func Insert(tablename string, params map[string]interface{}) map[string]interface{} {
+	sql := "Insert into " + tablename
+	values := make([]interface{},0)
+	return execute(sql, values)
+}
+
+func Update(tablename string, params map[string]interface{}) map[string]interface{} {
+	sql := "Update " + tablename + " set "
+	values := make([]interface{},0)
+	return execute(sql, values)
+}
+
+func Delete(tablename string, params map[string]interface{}) map[string]interface{} {
+	sql := "Delete from " + tablename + " where"
+	values := make([]interface{},0)
+	return execute(sql, values)
+}
+
+func execute(sql string, values []interface{}) map[string]interface{}  {
+	rs := make(map[string]interface{})
+	rs["code"] = 200
+	return rs
+}
+
+func execQeury(sql string, values []interface{}) map[string]interface{}  {
 	var configs interface{}
 	fr, err := os.Open("./configs.json")
 	decoder := json.NewDecoder(fr)
@@ -34,17 +66,17 @@ func execute(sql string, values []interface{}) (map[string]interface{}, error)  
 	defer dao.Close()
 	if err != nil {
 		rs["code"] = 204
-		return rs, err
+		return rs
 	}
 	stmt, err := dao.Prepare(sql)
 	if err != nil {
 		rs["code"] = 204
-		return rs, err
+		return rs
 	}
 	rows, err := stmt.Query(values...)
 	if err != nil {
 		rs["code"] = 204
-		return rs, err
+		return rs
 	}
 
 	columns, err := rows.Columns()
@@ -69,6 +101,6 @@ func execute(sql string, values []interface{}) (map[string]interface{}, error)  
 	rs["code"] = 200
 	//data, _ := json.Marshal(result)
 	rs["rows"] = result
-	return rs, err
+	return rs
 }
 

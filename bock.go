@@ -16,8 +16,9 @@ func main()  {
 	//rs, _ := db[0].Retrieve("", params, nil, nil)
 	//db := &table
 	//rs, _ := db.Retrieve("afataea", values)
-	fields := []string {"aa", "bb"}
+	fields := []string {"id", "name"}
 	args["fields"] = fields
-	rs, _ := table.Retrieve(params, args)
+	db := &table
+	rs := db.Retrieve(params, args)
 	fmt.Println(rs)
 }
