@@ -11,7 +11,7 @@ a tool can export mysql's table,data,views,function & stored procedure together 
 - multi grountinue to export many database together.
 - filter \xfffd.
 - solve the dependence of views.
-- can recieve a cli arg, which must be in table, data, views & funcs, to export single content.
+- can recieve a cli arg, which must be in table, data, view(s) & func, to export single content.
 
 ### configs.json
 you must create configs.json as:
