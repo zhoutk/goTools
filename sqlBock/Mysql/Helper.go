@@ -7,6 +7,7 @@ import (
 	mysql "database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"strings"
+	"log"
 )
 
 func query(tablename string, params map[string]interface{}, fields []string, sql string, vaules []interface{}) map[string]interface{} {
@@ -68,7 +69,7 @@ func ExecSql(sql string, values []interface{}) map[string]interface{} {
 func InsertBatch(tablename string, els []map[string]interface{}) map[string]interface{}  {
 	values := make([]interface{}, 0)
 	sql := "INSERT INTO " + tablename
-	//var upStr string
+	var upStr string
 	var firstEl map[string]interface{}
 	lenEls := len(els)
 	if lenEls > 0 {
@@ -86,8 +87,10 @@ func InsertBatch(tablename string, els []map[string]interface{}) map[string]inte
 	for k, v := range firstEl {
 		index++
 		eleHolder += "?"
+		upStr += k + " = values (" + k + ")"
 		if index < psLen {
 			eleHolder += ","
+			upStr += ","
 		}else{
 			eleHolder += ")"
 		}
@@ -103,10 +106,13 @@ func InsertBatch(tablename string, els []map[string]interface{}) map[string]inte
 		}
 	}
 
+	sql += " ON DUPLICATE KEY UPDATE " + upStr
+
 	return execute(sql, values)
 }
 
 func execute(sql string, values []interface{}) (rs map[string]interface{}) {
+	log.Println(sql, values)
 	rs = make(map[string]interface{})
 	defer func() {
 		if r := recover(); r != nil {
@@ -162,6 +168,7 @@ func execute(sql string, values []interface{}) (rs map[string]interface{}) {
 }
 
 func execQeury(sql string, values []interface{}) (rs map[string]interface{}) {
+	log.Println(sql, values)
 	rs = make(map[string]interface{})
 	defer func() {
 		if r := recover(); r != nil {

@@ -49,13 +49,17 @@ func main()  {
 	vs := make([]map[string]interface{}, 0)
 
 	params := make(map[string] interface{})
-	params["name"] = "golang批量1111"
-	params["status"] = 1
+	params["name"] = "golang批量11213"
+	params["isbn"] = "4156s5"
+	params["status"] = 5
+	params["id"] = 9
 	vs = append(vs, params)
 
 	params = make(map[string] interface{})
-	params["name"] = "golang批量2222"
+	params["name"] = "golang批量22af24"
+	params["isbn"] = "xxfqwt325rqrf45"
 	params["status"] = 2
+	params["id"] = 10
 	vs = append(vs, params)
 
 	db := &table
