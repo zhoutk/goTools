@@ -11,13 +11,13 @@ import (
 
 func query(tablename string, params map[string]interface{}, fields []string, sql string, vaules []interface{}) map[string]interface{} {
 	if vaules == nil {
-		vaules = make([]interface{},0)
+		vaules = make([]interface{}, 0)
 	}
-	rs := execQeury("select "+ strings.Join(fields, ",")+" from " + tablename, vaules)
+	rs := execQeury("select "+strings.Join(fields, ",")+" from "+tablename, vaules)
 	return rs
 }
 
-func Query(tablename string, params map[string]interface{}, fields []string ) map[string]interface{} {
+func Query(tablename string, params map[string]interface{}, fields []string) map[string]interface{} {
 	return query(tablename, params, fields, "", nil)
 }
 
@@ -27,7 +27,7 @@ func Insert(tablename string, params map[string]interface{}) map[string]interfac
 	var ks []string
 	var vs []string
 	for k, v := range params {
-		ks = append(ks, "`"+k+"`")
+		ks = append(ks, "`" + k + "`")
 		vs = append(vs, "?")
 		values = append(values, v)
 	}
@@ -37,13 +37,13 @@ func Insert(tablename string, params map[string]interface{}) map[string]interfac
 
 func Update(tablename string, params map[string]interface{}) map[string]interface{} {
 	sql := "Update " + tablename + " set "
-	values := make([]interface{},0)
+	values := make([]interface{}, 0)
 	return execute(sql, values)
 }
 
 func Delete(tablename string, params map[string]interface{}) map[string]interface{} {
 	sql := "Delete from " + tablename + " where"
-	values := make([]interface{},0)
+	values := make([]interface{}, 0)
 	return execute(sql, values)
 }
 
@@ -77,7 +77,7 @@ func execute(sql string, values []interface{}) (rs map[string]interface{}) {
 	dbName := dbConf["db_name"].(string)
 	dbCharset := dbConf["db_charset"].(string)
 
-	dao, err := mysql.Open(dialect, dbUser + ":"+dbPass+"@tcp("+dbHost+":"+dbPort+")/"+dbName+"?charset="+dbCharset)
+	dao, err := mysql.Open(dialect, dbUser+":"+dbPass+"@tcp("+dbHost+":"+dbPort+")/"+dbName+"?charset="+dbCharset)
 	defer dao.Close()
 	if err != nil {
 		rs["code"] = 204
@@ -90,7 +90,7 @@ func execute(sql string, values []interface{}) (rs map[string]interface{}) {
 	if err != nil {
 		rs["code"] = 204
 		rs["err"] = err.Error()
-	}else {
+	} else {
 		id, _ := ers.LastInsertId()
 		affect, _ := ers.RowsAffected()
 		rs["code"] = 200
@@ -102,7 +102,7 @@ func execute(sql string, values []interface{}) (rs map[string]interface{}) {
 	return rs
 }
 
-func execQeury(sql string, values []interface{}) (rs map[string]interface{})  {
+func execQeury(sql string, values []interface{}) (rs map[string]interface{}) {
 	rs = make(map[string]interface{})
 	defer func() {
 		if r := recover(); r != nil {
@@ -132,7 +132,7 @@ func execQeury(sql string, values []interface{}) (rs map[string]interface{})  {
 	dbName := dbConf["db_name"].(string)
 	dbCharset := dbConf["db_charset"].(string)
 
-	dao, err := mysql.Open(dialect, dbUser + ":"+dbPass+"@tcp("+dbHost+":"+dbPort+")/"+dbName+"?charset="+dbCharset)
+	dao, err := mysql.Open(dialect, dbUser+":"+dbPass+"@tcp("+dbHost+":"+dbPort+")/"+dbName+"?charset="+dbCharset)
 	defer dao.Close()
 	if err != nil {
 		rs["code"] = 204
@@ -224,6 +224,3 @@ func escape(source string) string {
 	}
 	return string(desc[0:j])
 }
-
-
-
