@@ -13,7 +13,8 @@ func query(tablename string, params map[string]interface{}, fields []string, sql
 	if vaules == nil {
 		vaules = make([]interface{},0)
 	}
-	return execQeury("select "+ strings.Join(fields, ",")+" from " + tablename, vaules)
+	rs := execQeury("select "+ strings.Join(fields, ",")+" from " + tablename, vaules)
+	return rs
 }
 
 func Query(tablename string, params map[string]interface{}, fields []string ) map[string]interface{} {
@@ -44,11 +45,24 @@ func execute(sql string, values []interface{}) map[string]interface{}  {
 	return rs
 }
 
-func execQeury(sql string, values []interface{}) map[string]interface{}  {
+func execQeury(sql string, values []interface{}) (rs map[string]interface{})  {
 	var configs interface{}
+	rs = make(map[string]interface{})
+	defer func() {
+		if r := recover(); r != nil {
+			rs["code"] = 500
+			rs["err"] = "Exception, " + r.(error).Error()
+		}
+	}()
+
 	fr, err := os.Open("./configs.json")
 	decoder := json.NewDecoder(fr)
 	err = decoder.Decode(&configs)
+	if err != nil {
+		rs["code"] = 204
+		rs["err"] = "Open database config error, " + err.Error()
+		return rs
+	}
 
 	confs := configs.(map[string]interface{})
 	dialect := confs["database_dialect"].(string)
@@ -61,11 +75,11 @@ func execQeury(sql string, values []interface{}) map[string]interface{}  {
 	dbName := dbConf["db_name"].(string)
 	dbCharset := dbConf["db_charset"].(string)
 
-	rs := make(map[string]interface{})
 	dao, err := mysql.Open(dialect, dbUser + ":"+dbPass+"@tcp("+dbHost+":"+dbPort+")/"+dbName+"?charset="+dbCharset)
 	defer dao.Close()
 	if err != nil {
 		rs["code"] = 204
+		rs["err"] = err.Error()
 		return rs
 	}
 	stmt, err := dao.Prepare(sql)
@@ -76,10 +90,16 @@ func execQeury(sql string, values []interface{}) map[string]interface{}  {
 	rows, err := stmt.Query(values...)
 	if err != nil {
 		rs["code"] = 204
+		rs["err"] = err.Error()
 		return rs
 	}
 
 	columns, err := rows.Columns()
+	if err != nil {
+		rs["code"] = 204
+		rs["err"] = err.Error()
+		return rs
+	}
 	vs := make([]mysql.RawBytes, len(columns))
 	scans := make([]interface{}, len(columns))
 
@@ -103,4 +123,6 @@ func execQeury(sql string, values []interface{}) map[string]interface{}  {
 	rs["rows"] = result
 	return rs
 }
+
+
 
