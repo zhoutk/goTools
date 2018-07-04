@@ -1,5 +1,9 @@
 package Mysql
 
+import (
+	"strconv"
+)
+
 type Bock struct {
 	Table string
 }
@@ -12,7 +16,12 @@ func (b *Bock) Retrieve(params map[string]interface{}, args ...interface{}) map[
 func (b *Bock) Create(params map[string]interface{}, args ...interface{}) map[string]interface{} {
 	_, _, session := parseArgs(args)
 	if v, ok := session["userid"]; ok {
-		params["u_id"] = v.(string)
+		switch v.(type) {
+		case string:
+			params["u_id"] = v.(string)
+		case int:
+			params["u_id"] = strconv.Itoa(v.(int))
+		}
 	}
 	return Insert(b.Table, params)
 }
@@ -25,7 +34,7 @@ func (b *Bock) Update(params map[string]interface{}, args ...interface{}) map[st
 		rs["err"] = "Id must be input."
 		return rs
 	}
-	return Update(b.Table, params)
+	return Update(b.Table, params, id)
 }
 
 func (b *Bock) Delete(params map[string]interface{}, args ...interface{}) map[string]interface{} {
@@ -36,7 +45,7 @@ func (b *Bock) Delete(params map[string]interface{}, args ...interface{}) map[st
 		rs["err"] = "Id must be input."
 		return rs
 	}
-	return Delete(b.Table, params)
+	return Delete(b.Table, params, id)
 }
 
 func parseArgs(args []interface{}) (string, []string, map[string]interface{}) {
@@ -48,7 +57,12 @@ func parseArgs(args []interface{}) (string, []string, map[string]interface{}) {
 		case map[string]interface{}:
 			for k, v := range vs.(map[string]interface{}) {
 				if k == "id" {
-					id = v.(string)
+					switch v.(type) {
+					case string:
+						id = v.(string)
+					case int:
+						id = strconv.Itoa(v.(int))
+					}
 				}
 				if k == "fields" {
 					fields = v.([]string)

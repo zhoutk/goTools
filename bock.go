@@ -19,8 +19,11 @@ func main()  {
 	//rs, _ := db.Retrieve("afataea", values)
 	//fields := []string {"id", "name"}
 	//args["fields"] = fields
-	session["userid"] = "998"
+	session["userid"] = "56"
 	args["session"] = session
+
+	//args["id"] = 8789
+
 	params["id"] = "1090912"
 	params["name"] = "测试插入"
 	params["is_rank"] = 8

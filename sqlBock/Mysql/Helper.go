@@ -35,13 +35,13 @@ func Insert(tablename string, params map[string]interface{}) map[string]interfac
 	return execute(sql, values)
 }
 
-func Update(tablename string, params map[string]interface{}) map[string]interface{} {
+func Update(tablename string, params map[string]interface{}, id string) map[string]interface{} {
 	sql := "Update " + tablename + " set "
 	values := make([]interface{}, 0)
 	return execute(sql, values)
 }
 
-func Delete(tablename string, params map[string]interface{}) map[string]interface{} {
+func Delete(tablename string, params map[string]interface{}, id string) map[string]interface{} {
 	sql := "Delete from " + tablename + " where"
 	values := make([]interface{}, 0)
 	return execute(sql, values)
