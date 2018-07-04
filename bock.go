@@ -36,4 +36,11 @@ func main()  {
 	args["id"] = 6
 	rs = db.Delete(nil, args)
 	fmt.Println(rs)
+
+	//execSql
+	values := make([]interface{}, 0)
+	values = append(values, "我是手写sql")
+	values = append(values, 1)
+	rs = db.ExecSql("update books set name = ? where id = ? ", values)
+	fmt.Println(rs)
 }

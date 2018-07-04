@@ -61,6 +61,10 @@ func Delete(tablename string, id string) map[string]interface{} {
 	return execute(sql, values)
 }
 
+func ExecSql(sql string, values []interface{}) map[string]interface{} {
+	return execute(sql, values)
+}
+
 func execute(sql string, values []interface{}) (rs map[string]interface{}) {
 	rs = make(map[string]interface{})
 	defer func() {

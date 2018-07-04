@@ -48,6 +48,10 @@ func (b *Bock) Delete(params map[string]interface{}, args ...interface{}) map[st
 	return Delete(b.Table, id)
 }
 
+func (b * Bock) ExecSql(sql string, values []interface{}) map[string]interface{} {
+	return ExecSql(sql, values)
+}
+
 func parseArgs(args []interface{}) (string, []string, map[string]interface{}) {
 	var id string
 	var fields []string
