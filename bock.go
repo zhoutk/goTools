@@ -7,27 +7,27 @@ import (
 
 func main()  {
 	table := Bock.Bock{
-		Table: "role",
+		Table: "books",
 	}
+
+	//insert one record
 	params := make(map[string] interface{})
 	args := make(map[string] interface{})
 	session := make(map[string] interface{})
-	//db := make([]DB.IBock, 1)
-	//db[0] = &table
-	//rs, _ := db[0].Retrieve("", params, nil, nil)
-	//db := &table
-	//rs, _ := db.Retrieve("afataea", values)
-	//fields := []string {"id", "name"}
-	//args["fields"] = fields
-	session["userid"] = "56"
+	session["userid"] = "112"
 	args["session"] = session
-
-	//args["id"] = 8789
-
-	params["id"] = "1090912"
-	params["name"] = "测试插入"
-	params["is_rank"] = 8
+	params["name"] = "golang实战3443"
+	params["status"] = 0
 	db := &table
 	rs := db.Create(params, args)
+	fmt.Println(rs)
+
+	//update one record
+	params = make(map[string] interface{})
+	args = make(map[string] interface{})
+	args["id"] = 2
+	params["name"] = "update 2"
+	params["status"] = 9
+	rs = db.Update(params, args)
 	fmt.Println(rs)
 }

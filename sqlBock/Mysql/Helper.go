@@ -36,8 +36,21 @@ func Insert(tablename string, params map[string]interface{}) map[string]interfac
 }
 
 func Update(tablename string, params map[string]interface{}, id string) map[string]interface{} {
-	sql := "Update " + tablename + " set "
 	values := make([]interface{}, 0)
+	sql := "UPDATE `" + tablename + "` set " //+strings.Join(allFields, ",")+") VALUES ("
+	var ks string
+	index := 0
+	psLen := len(params)
+	for k, v := range params {
+		index++
+		values = append(values, v)
+		ks += "`" + k + "` =  ?"
+		if index < psLen {
+			ks += ","
+		}
+	}
+	values = append(values, id)
+	sql += ks + " WHERE id = ? "
 	return execute(sql, values)
 }
 
@@ -94,7 +107,7 @@ func execute(sql string, values []interface{}) (rs map[string]interface{}) {
 		id, _ := ers.LastInsertId()
 		affect, _ := ers.RowsAffected()
 		rs["code"] = 200
-		rs["info"] = "Insert operation success."
+		rs["info"] = sql[0:6] + " operation success."
 		rs["LastInsertId"] = id
 		rs["RowsAffected"] = affect
 
