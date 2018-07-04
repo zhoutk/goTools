@@ -54,9 +54,10 @@ func Update(tablename string, params map[string]interface{}, id string) map[stri
 	return execute(sql, values)
 }
 
-func Delete(tablename string, params map[string]interface{}, id string) map[string]interface{} {
-	sql := "Delete from " + tablename + " where"
+func Delete(tablename string, id string) map[string]interface{} {
+	sql := "DELETE FROM " + tablename + " where id = ? "
 	values := make([]interface{}, 0)
+	values = append(values, id)
 	return execute(sql, values)
 }
 

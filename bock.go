@@ -27,7 +27,13 @@ func main()  {
 	args = make(map[string] interface{})
 	args["id"] = 2
 	params["name"] = "update 2"
-	params["status"] = 9
+	params["status"] = 3
 	rs = db.Update(params, args)
+	fmt.Println(rs)
+
+	//delete one record
+	args = make(map[string] interface{})
+	args["id"] = 6
+	rs = db.Delete(nil, args)
 	fmt.Println(rs)
 }

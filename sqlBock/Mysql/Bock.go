@@ -45,7 +45,7 @@ func (b *Bock) Delete(params map[string]interface{}, args ...interface{}) map[st
 		rs["err"] = "Id must be input."
 		return rs
 	}
-	return Delete(b.Table, params, id)
+	return Delete(b.Table, id)
 }
 
 func parseArgs(args []interface{}) (string, []string, map[string]interface{}) {
