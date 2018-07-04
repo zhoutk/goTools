@@ -65,6 +65,47 @@ func ExecSql(sql string, values []interface{}) map[string]interface{} {
 	return execute(sql, values)
 }
 
+func InsertBatch(tablename string, els []map[string]interface{}) map[string]interface{}  {
+	values := make([]interface{}, 0)
+	sql := "INSERT INTO " + tablename
+	//var upStr string
+	var firstEl map[string]interface{}
+	lenEls := len(els)
+	if lenEls > 0 {
+		firstEl = els[0]
+	}else {
+		rs := make(map[string]interface{})
+		rs["code"] = 301
+		rs["err"] = "Params is wrong, element must not be empty."
+		return rs
+	}
+	var allKey []string
+	eleHolder := "("
+	index := 0
+	psLen := len(firstEl)
+	for k, v := range firstEl {
+		index++
+		eleHolder += "?"
+		if index < psLen {
+			eleHolder += ","
+		}else{
+			eleHolder += ")"
+		}
+		allKey = append(allKey, k)
+		values = append(values, v)
+	}
+	sql += " ("+strings.Join(allKey, ",")+") values " + eleHolder
+
+	for i := 1; i < lenEls; i++ {
+		sql += "," + eleHolder
+		for _, key := range allKey {
+			values = append(values, els[i][key])
+		}
+	}
+
+	return execute(sql, values)
+}
+
 func execute(sql string, values []interface{}) (rs map[string]interface{}) {
 	rs = make(map[string]interface{})
 	defer func() {

@@ -10,7 +10,7 @@ func main()  {
 		Table: "books",
 	}
 
-	//insert one record
+	/*//insert one record
 	params := make(map[string] interface{})
 	args := make(map[string] interface{})
 	session := make(map[string] interface{})
@@ -42,5 +42,23 @@ func main()  {
 	values = append(values, "我是手写sql")
 	values = append(values, 1)
 	rs = db.ExecSql("update books set name = ? where id = ? ", values)
+	fmt.Println(rs)
+	*/
+
+	//insertBatch
+	vs := make([]map[string]interface{}, 0)
+
+	params := make(map[string] interface{})
+	params["name"] = "golang批量1111"
+	params["status"] = 1
+	vs = append(vs, params)
+
+	params = make(map[string] interface{})
+	params["name"] = "golang批量2222"
+	params["status"] = 2
+	vs = append(vs, params)
+
+	db := &table
+	rs := db.InsertBatch("books", vs)
 	fmt.Println(rs)
 }

@@ -48,8 +48,12 @@ func (b *Bock) Delete(params map[string]interface{}, args ...interface{}) map[st
 	return Delete(b.Table, id)
 }
 
-func (b * Bock) ExecSql(sql string, values []interface{}) map[string]interface{} {
+func (b *Bock) ExecSql(sql string, values []interface{}) map[string]interface{} {
 	return ExecSql(sql, values)
+}
+
+func (b *Bock) InsertBatch(tablename string, els []map[string]interface{}) map[string]interface{} {
+	return InsertBatch(tablename, els)
 }
 
 func parseArgs(args []interface{}) (string, []string, map[string]interface{}) {
