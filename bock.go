@@ -11,6 +11,7 @@ func main()  {
 	}
 	params := make(map[string] interface{})
 	args := make(map[string] interface{})
+	session := make(map[string] interface{})
 	//db := make([]DB.IBock, 1)
 	//db[0] = &table
 	//rs, _ := db[0].Retrieve("", params, nil, nil)
@@ -18,6 +19,8 @@ func main()  {
 	//rs, _ := db.Retrieve("afataea", values)
 	//fields := []string {"id", "name"}
 	//args["fields"] = fields
+	session["userid"] = "998"
+	args["session"] = session
 	params["id"] = "1090912"
 	params["name"] = "测试插入"
 	params["is_rank"] = 8

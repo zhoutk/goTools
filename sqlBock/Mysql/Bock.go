@@ -10,9 +10,10 @@ func (b *Bock) Retrieve(params map[string]interface{}, args ...interface{}) map[
 }
 
 func (b *Bock) Create(params map[string]interface{}, args ...interface{}) map[string]interface{} {
-	//_, _, session := parseArgs(args)
-	//uId := session["userid"].(string)
-	//params["u_id"] = uId
+	_, _, session := parseArgs(args)
+	if v, ok := session["userid"]; ok {
+		params["u_id"] = v.(string)
+	}
 	return Insert(b.Table, params)
 }
 
