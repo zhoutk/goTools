@@ -87,3 +87,21 @@ go buid ip.go
 ./ip 
 ```
 
+## 3. rest server
+A framework for building micro service rapidly, safely & efficiently.
+
+### characteristic
+- auto orm that can build sql from json object.
+- standard sql interface.
+- auto restful api serivce according to sql struct.
+
+### Instructions
+```
+git clone https://github.com/zhoutk/goTools
+cd goTools
+go get
+go run bock.go
+
+go buid bock.go
+./bock
+```
