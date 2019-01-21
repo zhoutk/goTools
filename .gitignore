@@ -1,6 +1,7 @@
 # Diy
 **/configs.*
 **/*.sql
+**/.DS_Store
 
 # Binaries for programs and plugins
 *.exe
